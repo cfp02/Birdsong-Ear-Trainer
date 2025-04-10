@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/bird.dart';
+import '../models/region.dart';
 import '../providers/ebird_provider.dart';
 
 class BirdSelectionScreen extends ConsumerWidget {
@@ -10,7 +11,7 @@ class BirdSelectionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final regionsAsync = ref.watch(regionsProvider);
     final selectedRegion = ref.watch(selectedRegionProvider);
-    final birdsAsync = ref.watch(birdsForRegionProvider);
+    final birdsAsync = ref.watch(birdsProvider(selectedRegion));
 
     return Scaffold(
       appBar: AppBar(
@@ -28,14 +29,16 @@ class BirdSelectionScreen extends ConsumerWidget {
                   border: OutlineInputBorder(),
                 ),
                 items: regions.map((region) {
-                  return DropdownMenuItem(
-                    value: region,
-                    child: Text(region),
+                  return DropdownMenuItem<String>(
+                    value: region.code,
+                    child: Text(region.name),
                   );
                 }).toList(),
                 onChanged: (value) {
-                  print('Selected region: $value');
-                  ref.read(selectedRegionProvider.notifier).state = value;
+                  if (value != null) {
+                    print('Selected region: $value');
+                    ref.read(selectedRegionProvider.notifier).state = value;
+                  }
                 },
               ),
               loading: () => const CircularProgressIndicator(),
@@ -86,7 +89,7 @@ class BirdSelectionScreen extends ConsumerWidget {
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () {
-                          ref.refresh(birdsForRegionProvider);
+                          ref.refresh(birdsProvider(selectedRegion));
                         },
                         child: const Text('Retry'),
                       ),

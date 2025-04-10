@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'screens/bird_selection_screen.dart';
+import 'screens/bird_list_selection_screen.dart';
 
 void main() async {
   try {
@@ -111,7 +111,7 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const BirdSelectionScreen(),
+                        builder: (context) => const BirdListSelectionScreen(),
                       ),
                     );
                   },

@@ -1,18 +1,20 @@
 class Bird {
-  final String id;
   final String name;
   final String scientificName;
+  final String speciesCode;
   final String family;
+  final String order;
   final String region;
   final String audioUrl;
   final int difficulty; // 1-5 scale
   final String imageUrl;
 
   Bird({
-    required this.id,
     required this.name,
     required this.scientificName,
+    required this.speciesCode,
     required this.family,
+    required this.order,
     required this.region,
     required this.audioUrl,
     required this.difficulty,
@@ -21,37 +23,37 @@ class Bird {
 
   factory Bird.fromJson(Map<String, dynamic> json) {
     return Bird(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      scientificName: json['scientificName'] as String,
-      family: json['family'] as String,
-      region: json['region'] as String,
-      audioUrl: json['audioUrl'] as String,
-      difficulty: json['difficulty'] as int,
-      imageUrl: json['imageUrl'] as String,
+      name: json['comName'] as String,
+      scientificName: json['sciName'] as String,
+      speciesCode: json['speciesCode'] as String,
+      family: json['familyComName'] as String? ?? 'Unknown',
+      order: json['order'] as String? ?? 'Unknown',
+      region: json['locName'] as String? ?? 'Unknown',
+      audioUrl: '', // We'll need to get this from Xeno-canto
+      difficulty: 3, // Default difficulty
+      imageUrl: '', // We'll need to get this from another source
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'name': name,
-      'scientificName': scientificName,
-      'family': family,
-      'region': region,
-      'audioUrl': audioUrl,
-      'difficulty': difficulty,
-      'imageUrl': imageUrl,
+      'comName': name,
+      'sciName': scientificName,
+      'speciesCode': speciesCode,
+      'familyComName': family,
+      'order': order,
+      'locName': region,
     };
   }
 
   factory Bird.fromEBirdJson(Map<String, dynamic> json) {
     print('Creating bird from JSON: $json');
     return Bird(
-      id: json['speciesCode'] ?? '',
       name: json['comName'] ?? '',
       scientificName: json['sciName'] ?? '',
+      speciesCode: json['speciesCode'] ?? '',
       family: '', // We'll need to get this from another source
+      order: '', // We'll need to get this from another source
       region: json['locName'] ?? '',
       audioUrl: '', // We'll need to get this from Xeno-canto
       difficulty: 3, // Default difficulty

@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:mockito/mockito.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:birdsong_trainer/services/ebird_service.dart';
-import 'package:birdsong_trainer/models/bird.dart';
 import 'dart:io';
 
 class MockClient extends Mock implements http.Client {}
@@ -20,7 +19,7 @@ void main() {
 
   setUp(() {
     mockClient = MockClient();
-    eBirdService = EBirdService(client: mockClient);
+    eBirdService = EBirdService();
   });
 
   group('EBirdService Tests', () {
@@ -28,7 +27,7 @@ void main() {
         () async {
       // Mock successful response
       when(mockClient.get(
-        Uri.parse('https://api.ebird.org/v2/data/obs/region/recent/US-NY'),
+        Uri.parse('https://api.ebird.org/v2/data/obs/US-NY/recent'),
         headers: anyNamed('headers'),
       )).thenAnswer((_) async => http.Response(
             '''
@@ -46,16 +45,16 @@ void main() {
 
       final birds = await eBirdService.getBirdsByRegion('US-NY');
 
-      expect(birds, isA<List<Bird>>());
+      expect(birds, isA<List<Map<String, dynamic>>>());
       expect(birds.length, 1);
-      expect(birds[0].name, 'American Crow');
-      expect(birds[0].scientificName, 'Corvus brachyrhynchos');
+      expect(birds[0]['comName'], 'American Crow');
+      expect(birds[0]['sciName'], 'Corvus brachyrhynchos');
     });
 
     test('getBirdsByRegion throws exception on failed response', () async {
       // Mock failed response
       when(mockClient.get(
-        Uri.parse('https://api.ebird.org/v2/data/obs/region/recent/US-NY'),
+        Uri.parse('https://api.ebird.org/v2/data/obs/US-NY/recent'),
         headers: anyNamed('headers'),
       )).thenAnswer((_) async => http.Response('Error', 404));
 
@@ -65,8 +64,7 @@ void main() {
       );
     });
 
-    test('getRegions returns list of region codes on successful response',
-        () async {
+    test('getRegions returns list of regions on successful response', () async {
       // Mock successful response
       when(mockClient.get(
         Uri.parse('https://api.ebird.org/v2/ref/region/list/subnational1/US'),
@@ -83,10 +81,12 @@ void main() {
 
       final regions = await eBirdService.getRegions();
 
-      expect(regions, isA<List<String>>());
+      expect(regions, isA<List<Map<String, dynamic>>>());
       expect(regions.length, 2);
-      expect(regions[0], 'US-NY');
-      expect(regions[1], 'US-CA');
+      expect(regions[0]['code'], 'US-NY');
+      expect(regions[0]['name'], 'New York');
+      expect(regions[1]['code'], 'US-CA');
+      expect(regions[1]['name'], 'California');
     });
 
     test('getRegions throws exception on failed response', () async {

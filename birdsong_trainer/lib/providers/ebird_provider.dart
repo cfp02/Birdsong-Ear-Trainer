@@ -1,28 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/region.dart';
 import '../services/ebird_service.dart';
 import '../models/bird.dart';
 
-final ebirdServiceProvider = Provider((ref) => EBirdService());
-
-final selectedRegionProvider = StateProvider<String?>((ref) => null);
-
-final birdsForRegionProvider = FutureProvider<List<Bird>>((ref) async {
-  final region = ref.watch(selectedRegionProvider);
-  if (region == null) return [];
-
-  final ebirdService = ref.watch(ebirdServiceProvider);
-  try {
-    return await ebirdService.getBirdsByRegion(region);
-  } catch (e) {
-    return [];
-  }
+final ebirdServiceProvider = Provider<EBirdService>((ref) {
+  return EBirdService();
 });
 
-final regionsProvider = FutureProvider<List<String>>((ref) async {
-  final ebirdService = ref.watch(ebirdServiceProvider);
-  try {
-    return await ebirdService.getRegions();
-  } catch (e) {
-    return [];
-  }
+final regionsProvider = FutureProvider<List<Region>>((ref) async {
+  final service = ref.watch(ebirdServiceProvider);
+  final regions = await service.getRegions();
+  return regions.map((region) => Region.fromJson(region)).toList();
+});
+
+final selectedRegionProvider = StateProvider<String>((ref) {
+  return 'US-MA'; // Default to Massachusetts
+});
+
+final birdsProvider =
+    FutureProvider.family<List<Bird>, String>((ref, regionCode) async {
+  final service = ref.watch(ebirdServiceProvider);
+  final birds = await service.getBirdsByRegion(regionCode);
+  return birds.map((bird) => Bird.fromJson(bird)).toList();
 });
