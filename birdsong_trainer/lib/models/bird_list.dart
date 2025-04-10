@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class BirdList {
   final String id;
   final String name;
@@ -28,11 +30,11 @@ class BirdList {
         'comyel', // Common Yellowthroat
         'amered', // American Redstart
         'magwar', // Magnolia Warbler
-        'blujay', // Black-throated Blue Warbler
-        'btnwar', // Black-throated Green Warbler
+        'btbwar', // Black-throated Blue Warbler
+        'btgwar', // Black-throated Green Warbler
         'prawar', // Prairie Warbler
         'palmwa', // Palm Warbler
-        'yelrwa', // Yellow-rumped Warbler
+        'myrwar', // Myrtle Warbler
         'ovenbi', // Ovenbird
       ],
       regions: ['US-ME', 'US-NH', 'US-VT', 'US-MA', 'US-CT', 'US-RI', 'US-NY'],
@@ -47,17 +49,12 @@ class BirdList {
         'comyel', // Common Yellowthroat
         'amered', // American Redstart
         'magwar', // Magnolia Warbler
-        'blujay', // Black-throated Blue Warbler
-        'btnwar', // Black-throated Green Warbler
+        'btbwar', // Black-throated Blue Warbler
+        'btgwar', // Black-throated Green Warbler
         'prawar', // Prairie Warbler
         'palmwa', // Palm Warbler
-        'yelrwa', // Yellow-rumped Warbler
+        'myrwar', // Myrtle Warbler
         'ovenbi', // Ovenbird
-        'boboli', // Bobolink
-        'baltor', // Baltimore Oriole
-        'scatan', // Scarlet Tanager
-        'indbun', // Indigo Bunting
-        'grycat', // Gray Catbird
       ],
       regions: ['US-ME', 'US-NH', 'US-VT', 'US-MA', 'US-CT', 'US-RI', 'US-NY'],
     ),

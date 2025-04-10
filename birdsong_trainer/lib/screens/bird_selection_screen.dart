@@ -58,7 +58,7 @@ class BirdSelectionScreen extends ConsumerWidget {
                         itemBuilder: (context, index) {
                           final bird = birds[index];
                           return ListTile(
-                            title: Text(bird.name),
+                            title: Text(bird.commonName),
                             subtitle: Text(bird.scientificName),
                             trailing: IconButton(
                               icon: const Icon(Icons.add),
@@ -66,7 +66,7 @@ class BirdSelectionScreen extends ConsumerWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                        'Added ${bird.name} to training list'),
+                                        'Added ${bird.commonName} to training list'),
                                   ),
                                 );
                               },

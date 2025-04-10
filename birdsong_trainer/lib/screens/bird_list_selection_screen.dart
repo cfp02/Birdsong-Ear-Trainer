@@ -178,7 +178,9 @@ class BirdListSelectionScreen extends ConsumerWidget {
                 regions: list.regions,
                 families: list.families,
               );
-              ref.read(birdListsProvider.notifier).updateList(updatedList);
+              ref
+                  .read(birdListsProvider.notifier)
+                  .updateCustomList(updatedList);
               Navigator.pop(context);
             },
             child: const Text('Save'),
@@ -202,7 +204,7 @@ class BirdListSelectionScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              ref.read(birdListsProvider.notifier).removeList(list.id);
+              ref.read(birdListsProvider.notifier).removeCustomList(list.id);
               if (ref.read(selectedBirdListProvider)?.id == list.id) {
                 ref.read(selectedBirdListProvider.notifier).state = null;
               }

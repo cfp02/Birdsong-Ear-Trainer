@@ -1,63 +1,51 @@
 class Bird {
-  final String name;
-  final String scientificName;
   final String speciesCode;
-  final String family;
-  final String order;
-  final String region;
-  final String audioUrl;
-  final int difficulty; // 1-5 scale
-  final String imageUrl;
+  final String commonName;
+  final String scientificName;
+  final String? family;
+  final String? region;
+  final int? difficulty;
 
   Bird({
-    required this.name,
-    required this.scientificName,
     required this.speciesCode,
-    required this.family,
-    required this.order,
-    required this.region,
-    required this.audioUrl,
-    required this.difficulty,
-    required this.imageUrl,
+    required this.commonName,
+    required this.scientificName,
+    this.family,
+    this.region,
+    this.difficulty,
   });
 
   factory Bird.fromJson(Map<String, dynamic> json) {
     return Bird(
-      name: json['comName'] as String,
-      scientificName: json['sciName'] as String,
       speciesCode: json['speciesCode'] as String,
-      family: json['familyComName'] as String? ?? 'Unknown',
-      order: json['order'] as String? ?? 'Unknown',
-      region: json['locName'] as String? ?? 'Unknown',
-      audioUrl: '', // We'll need to get this from Xeno-canto
-      difficulty: 3, // Default difficulty
-      imageUrl: '', // We'll need to get this from another source
+      commonName: json['comName'] as String,
+      scientificName: json['sciName'] as String,
+      family: json['familyComName'] as String?,
+      region: json['subnational2Code'] as String?,
+      difficulty: 1, // Default difficulty level
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'comName': name,
-      'sciName': scientificName,
       'speciesCode': speciesCode,
+      'comName': commonName,
+      'sciName': scientificName,
       'familyComName': family,
-      'order': order,
-      'locName': region,
+      'subnational2Code': region,
+      'difficulty': difficulty,
     };
   }
 
   factory Bird.fromEBirdJson(Map<String, dynamic> json) {
     print('Creating bird from JSON: $json');
     return Bird(
-      name: json['comName'] ?? '',
-      scientificName: json['sciName'] ?? '',
       speciesCode: json['speciesCode'] ?? '',
+      commonName: json['comName'] ?? '',
+      scientificName: json['sciName'] ?? '',
       family: '', // We'll need to get this from another source
-      order: '', // We'll need to get this from another source
       region: json['locName'] ?? '',
-      audioUrl: '', // We'll need to get this from Xeno-canto
       difficulty: 3, // Default difficulty
-      imageUrl: '', // We'll need to get this from another source
     );
   }
 }

@@ -16,7 +16,8 @@ class BirdFilter {
   bool matches(Bird bird) {
     if (region != null && bird.region != region) return false;
     if (family != null && bird.family != family) return false;
-    if (maxDifficulty != null && bird.difficulty > maxDifficulty!) return false;
+    if (maxDifficulty != null && (bird.difficulty ?? 0) > maxDifficulty!)
+      return false;
     return true;
   }
 }

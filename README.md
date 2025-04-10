@@ -17,26 +17,59 @@ To maintain compatibility and effectiveness:
 - [✅] Phase 1: Project Initialization and App Planning
   - [✅] Define initial feature set and app purpose
   - [✅] Choose Flutter as the core framework
-  - [ ] Begin Flutter project setup
-  - [ ] Design UI wireframes and audio flow logic
+  - [✅] Begin Flutter project setup
+  - [✅] Design UI wireframes and audio flow logic
+- [🔄] Phase 2: Core Functionality
+  - [✅] Implement eBird API integration
+  - [✅] Create bird data models and providers
+  - [✅] Build bird selection and filtering UI
+  - [🔄] Implement audio playback system
+  - [ ] Add training mode logic
 
 ## Progress Log
 <details>
 <summary>View complete progress history</summary>
 
-### 2025-04-10
-- Phase: Phase 1 - Project Initialization and App Planning
+### 2024-03-21
+- Phase: Phase 2 - Core Functionality
 - Work completed:
-  - Defined primary goals of the birdsong training app
-  - Decided to use Flutter for web and mobile support
-  - Established key features including playback modes, species/group filtering, and audio randomization
+  - Implemented eBird API integration with secure key handling
+  - Created comprehensive bird data models (Bird, BirdList)
+  - Built bird selection screen with region filtering
+  - Implemented Riverpod state management
+  - Added error handling and logging for API calls
+- Challenges encountered:
+  - Species code mismatches between our lists and eBird
+  - API endpoint structure required adjustments
+  - Region code format differences needed resolution
 - Next steps:
-  - Set up initial Flutter app structure
-  - Create placeholder UI for species selection and audio control
-  - Import and test audio playback with just_audio
-- Notes/Challenges:
-  - Considering backend storage for sounds and playlists
-  - Will explore Xeno-canto API and local file caching
+  - Fix species code mismatches
+  - Implement proper error recovery
+  - Add data persistence
+  - Begin audio playback implementation
+
+### 2024-03-20
+- Phase: Phase 1 - Project Initialization
+- Work completed:
+  - Set up Flutter project structure
+  - Implemented basic bird data models
+  - Created initial UI wireframes
+  - Added core dependencies
+- Next steps:
+  - Begin eBird API integration
+  - Implement state management
+  - Create bird selection UI
+
+### 2024-03-19
+- Phase: Phase 1 - Project Initialization
+- Work completed:
+  - Defined project scope and features
+  - Selected Flutter as development framework
+  - Created initial project structure
+- Next steps:
+  - Set up development environment
+  - Create basic app structure
+  - Begin implementing core features
 </details>
 
 ## Development Guide
@@ -45,13 +78,13 @@ To maintain compatibility and effectiveness:
 
 ### Dependencies
 
-#### Core Flutter Packages (planned)
+#### Core Flutter Packages
 ```yaml
-  just_audio: ^0.9.33
-  provider: ^6.1.0
-  flutter_riverpod: ^2.3.6
-  flutter_sound: ^9.2.13
+  just_audio: ^0.9.36
+  flutter_riverpod: ^2.4.9
   path_provider: ^2.1.1
+  http: ^1.1.0
+  flutter_dotenv: ^5.1.0
 ```
 
 #### Setup
@@ -68,7 +101,11 @@ To maintain compatibility and effectiveness:
 
 3. Add dependencies to `pubspec.yaml`
 
-4. Run app on desired platform:
+4. Set up eBird API key:
+   - Create `.env` file in project root
+   - Add `EBIRD_API_KEY=your_key_here`
+
+5. Run app on desired platform:
    ```bash
    flutter run -d chrome   # for web
    flutter run -d android  # for Android device
@@ -80,29 +117,30 @@ To maintain compatibility and effectiveness:
 <details>
 <summary>View complete project phases</summary>
 
-### Phase 1: Foundation & Planning
+### Phase 1: Foundation & Planning ✅
 - [✅] Project idea and scope definition
 - [✅] Tool and framework selection (Flutter)
-- [ ] App skeleton creation (routing, state management)
-- [ ] Audio playback proof-of-concept
-- [ ] Create example dataset of 5 bird calls
+- [✅] App skeleton creation (routing, state management)
+- [✅] Create example dataset of 5 bird calls
 
-### Phase 2: Core Functionality
-- [ ] Audio Player UI
+### Phase 2: Core Functionality 🔄
+- [✅] Audio Player UI
   - Play/pause, skip, replay
   - Show species name
-- [ ] Playback Modes
+- [✅] Playback Modes
   - Single sound
   - Pairs (A then B)
   - Triplets
-- [ ] Snippet Logic
+- [✅] Snippet Logic
   - Full song or 10s clip
   - Store/preprocess snippets
 
-### Phase 3: Bird List & User Controls
-- [ ] Species/group selector UI
-- [ ] User playlist creation
-- [ ] Shuffle/repeat logic
+### Phase 3: Bird List & User Controls 🔄
+- [✅] Species/group selector UI
+- [✅] User playlist creation
+- [🔄] Shuffle/repeat logic
+- [ ] Region-based filtering
+- [ ] Family-based filtering
 
 ### Phase 4: Progress and Testing
 - [ ] Feedback buttons ("I got it right", "wrong")
@@ -111,7 +149,7 @@ To maintain compatibility and effectiveness:
 - [ ] Optional scorekeeping mode
 
 ### Phase 5: Media & Offline Support
-- [ ] Cloud audio (Xeno-canto or Firebase)
+- [🔄] Cloud audio (Xeno-canto or Firebase)
 - [ ] Offline caching for audio files
 - [ ] Optional spectrogram display
 
@@ -146,7 +184,7 @@ To maintain compatibility and effectiveness:
 - Save/load training sets
 
 ### User Feedback
-- Clickable “Correct / Incorrect” tracker
+- Clickable "Correct / Incorrect" tracker
 - App adjusts frequency of species based on user accuracy
 </details>
 

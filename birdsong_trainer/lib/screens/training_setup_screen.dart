@@ -66,7 +66,7 @@ class TrainingSetupScreen extends ConsumerWidget {
                       // TODO: Implement bird removal
                     },
                     child: ListTile(
-                      title: Text(bird.name),
+                      title: Text(bird.commonName),
                       subtitle: Text(bird.scientificName),
                       trailing: const Icon(Icons.drag_handle),
                     ),
