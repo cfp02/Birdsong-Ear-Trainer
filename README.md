@@ -23,6 +23,7 @@ To maintain compatibility and effectiveness:
   - [✅] Implement eBird API integration
   - [✅] Create bird data models and providers
   - [✅] Build bird selection and filtering UI
+  - [✅] Implement bird list management system
   - [🔄] Implement audio playback system
   - [ ] Add training mode logic
 
@@ -30,7 +31,37 @@ To maintain compatibility and effectiveness:
 <details>
 <summary>View complete progress history</summary>
 
-### 2024-03-21
+### 2025-04-10 (Evening)
+- Phase: Phase 2 - Core Functionality
+- Work completed:
+  - Implemented comprehensive bird list management system
+    - Created `BirdList` model with support for predefined and custom lists
+    - Implemented `BirdListsNotifier` for state management
+    - Built full-screen bird list editor with tabbed interface
+    - Added region-based bird filtering
+    - Implemented list creation, editing, and deletion
+  - Enhanced UI/UX for bird list management
+    - Converted edit dialog to full-screen view for better usability
+    - Added tabbed interface for managing birds in list
+    - Implemented loading states and error handling
+    - Added refresh functionality for region changes
+  - Technical improvements:
+    - Proper state management with Riverpod
+    - Efficient bird data fetching and caching
+    - Robust error handling for API calls
+    - Clean separation of concerns between models and UI
+- Challenges encountered:
+  - Managing state updates in the list editor
+  - Handling API response data conversion
+  - Ensuring proper cleanup of resources
+  - Maintaining list consistency during edits
+- Next steps:
+  - Implement audio playback system
+  - Add training mode logic
+  - Add data persistence for custom lists
+  - Implement bird call playback
+
+### 2025-04-10 (Afternoon)
 - Phase: Phase 2 - Core Functionality
 - Work completed:
   - Implemented eBird API integration with secure key handling
@@ -48,7 +79,7 @@ To maintain compatibility and effectiveness:
   - Add data persistence
   - Begin audio playback implementation
 
-### 2024-03-20
+### 2025-04-10 (Morning)
 - Phase: Phase 1 - Project Initialization
 - Work completed:
   - Set up Flutter project structure
@@ -60,7 +91,7 @@ To maintain compatibility and effectiveness:
   - Implement state management
   - Create bird selection UI
 
-### 2024-03-19
+### 2025-04-10 (Early Morning)
 - Phase: Phase 1 - Project Initialization
 - Work completed:
   - Defined project scope and features
@@ -134,19 +165,38 @@ To maintain compatibility and effectiveness:
 - [✅] Snippet Logic
   - Full song or 10s clip
   - Store/preprocess snippets
+- [✅] Bird List Management
+  - Predefined lists (e.g., Northeast Warblers)
+  - Custom list creation and editing
+  - Region-based bird filtering
+  - Full-screen list editor with tabbed interface
 
 ### Phase 3: Bird List & User Controls 🔄
 - [✅] Species/group selector UI
 - [✅] User playlist creation
 - [🔄] Shuffle/repeat logic
-- [ ] Region-based filtering
-- [ ] Family-based filtering
+- [✅] Region-based filtering
+- [✅] Family-based filtering
 
 ### Phase 4: Progress and Testing
-- [ ] Feedback buttons ("I got it right", "wrong")
-- [ ] Mark birds as "known" or "practice more"
-- [ ] Log response time and accuracy
+- [ ] Implement training session types
+  - [ ] Quiz Mode with multiple choice and text input
+  - [ ] Learning Mode with preview and reinforcement options
+  - [ ] Speed ID Mode with timing and scoring
+  - [ ] Progressive Mode with adaptive difficulty
+- [ ] Feedback system
+  - [ ] "Correct/Incorrect" tracking
+  - [ ] Time-based scoring
+  - [ ] Progress tracking
+  - [ ] Performance analytics
+- [ ] User progress tracking
+  - [ ] Mark birds as "known" or "practice more"
+  - [ ] Track response time and accuracy
+  - [ ] Generate personalized practice lists
 - [ ] Optional scorekeeping mode
+  - [ ] Session statistics
+  - [ ] Historical performance
+  - [ ] Achievement system
 
 ### Phase 5: Media & Offline Support
 - [🔄] Cloud audio (Xeno-canto or Firebase)
@@ -164,6 +214,61 @@ To maintain compatibility and effectiveness:
 <details>
 <summary>Click to expand</summary>
 
+### Training Session Types
+- **Quiz Mode**
+  - Play bird song
+  - User selects from multiple choice options
+  - Option for text input identification
+  - Timed response tracking
+  - Score based on accuracy and speed
+  - Difficulty levels (easy, medium, hard)
+
+- **Learning Mode**
+  - Two sub-modes:
+    1. **Preview Mode**: Show bird name first, then play song
+    2. **Reinforcement Mode**: Play song first, then reveal bird name
+  - Focus on memorization and recognition
+  - No scoring, pure learning experience
+  - Option to repeat songs
+  - Progress tracking for learned birds
+
+- **Speed ID Mode**
+  - Play bird song
+  - User can pause/stop playback when they think they know the bird
+  - Score based on:
+    - Accuracy of identification
+    - Time taken to identify
+    - Portion of song heard (encourages quick recognition)
+  - Leaderboard for fastest correct IDs
+  - Difficulty settings (e.g., only show common birds, or include rare ones)
+
+- **Progressive Mode**
+  - Start with easy birds
+  - Gradually introduce more challenging species
+  - Track user's success rate
+  - Automatically adjust difficulty based on performance
+  - Focus on birds the user struggles with
+
+### Bird List Management
+- **Predefined Lists**:
+  - Northeast Warblers
+  - Spring Migrants
+  - Common Thrushes
+  - Each list includes species codes, common names, and scientific names
+  - Region-specific filtering
+
+- **Custom List Creation**:
+  - Create new lists with custom names and descriptions
+  - Add/remove birds from available species
+  - Region-based bird filtering
+  - Full-screen editor with tabbed interface
+
+- **List Editing**:
+  - Modify list name and description
+  - Add/remove birds from the list
+  - Change region to see different available birds
+  - Real-time updates and state management
+
 ### Modes
 - **Single Call Mode**: One song plays, user guesses.
 - **Pair Mode**: Two back-to-back songs, user identifies both.
@@ -178,10 +283,6 @@ To maintain compatibility and effectiveness:
   - Region (e.g., Northeast US)
   - Family (e.g., Warblers)
   - Difficulty (custom tag or metadata)
-
-### Custom List Creation
-- Add/remove birds to practice playlist
-- Save/load training sets
 
 ### User Feedback
 - Clickable "Correct / Incorrect" tracker

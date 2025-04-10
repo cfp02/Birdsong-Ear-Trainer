@@ -6,6 +6,7 @@ import '../providers/bird_list_provider.dart';
 import '../providers/ebird_provider.dart';
 import 'training_setup_screen.dart';
 import 'settings_screen.dart';
+import 'bird_list_edit_screen.dart';
 
 class BirdListSelectionScreen extends ConsumerWidget {
   const BirdListSelectionScreen({super.key});
@@ -78,8 +79,13 @@ class BirdListSelectionScreen extends ConsumerWidget {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.edit),
-                        onPressed: () =>
-                            _showEditListDialog(context, ref, list),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                BirdListEditScreen(list: list),
+                          ),
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete),
@@ -142,116 +148,6 @@ class BirdListSelectionScreen extends ConsumerWidget {
             child: const Text('Create'),
           ),
         ],
-      ),
-    );
-  }
-
-  Future<void> _showEditListDialog(
-      BuildContext context, WidgetRef ref, BirdList list) async {
-    final nameController = TextEditingController(text: list.name);
-    final descriptionController = TextEditingController(text: list.description);
-    final regionController =
-        TextEditingController(text: list.regions?.first ?? 'US-MA');
-    final ebirdService = ref.read(ebirdServiceProvider);
-    final availableBirds = <Bird>[];
-
-    // Fetch available birds for the region
-    try {
-      final regionBirds =
-          await ebirdService.getBirdsByRegion(regionController.text);
-      for (var birdData in regionBirds) {
-        try {
-          final bird = Bird.fromJson(birdData);
-          availableBirds.add(bird);
-        } catch (e) {
-          print('Error converting bird data: $e');
-        }
-      }
-    } catch (e) {
-      print('Error fetching birds: $e');
-    }
-
-    return showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Edit List'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'List Name'),
-                ),
-                TextField(
-                  controller: descriptionController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                ),
-                TextField(
-                  controller: regionController,
-                  decoration:
-                      const InputDecoration(labelText: 'Region (e.g., US-MA)'),
-                ),
-                const SizedBox(height: 16),
-                const Text('Birds in List:',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                ...list.birds
-                    .map((bird) => ListTile(
-                          title: Text(bird.commonName),
-                          subtitle: Text(bird.scientificName),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.remove_circle_outline),
-                            onPressed: () {
-                              setState(() {
-                                list.birds.remove(bird);
-                              });
-                            },
-                          ),
-                        ))
-                    .toList(),
-                const SizedBox(height: 16),
-                const Text('Available Birds:',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                ...availableBirds
-                    .where((bird) => !list.birds.contains(bird))
-                    .map((bird) => ListTile(
-                          title: Text(bird.commonName),
-                          subtitle: Text(bird.scientificName),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.add_circle_outline),
-                            onPressed: () {
-                              setState(() {
-                                list.birds.add(bird);
-                              });
-                            },
-                          ),
-                        ))
-                    .toList(),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final updatedList = list.copyWith(
-                  name: nameController.text,
-                  description: descriptionController.text,
-                  regions: [regionController.text],
-                );
-                ref
-                    .read(birdListsProvider.notifier)
-                    .updateCustomList(updatedList);
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
       ),
     );
   }
