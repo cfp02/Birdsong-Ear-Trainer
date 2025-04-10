@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/bird.dart';
 import '../models/bird_list.dart';
 import '../providers/bird_list_provider.dart';
+import '../providers/ebird_provider.dart';
 import 'training_setup_screen.dart';
 import 'settings_screen.dart';
 
@@ -15,78 +17,82 @@ class BirdListSelectionScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bird Lists'),
+        title: const Text('Select Bird List'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                ),
-              );
-            },
+            icon: const Icon(Icons.add),
+            onPressed: () => _showCreateListDialog(context, ref),
           ),
         ],
       ),
       body: Column(
         children: [
+          // Predefined Lists Section
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'Predefined Lists',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: BirdList.predefinedLists.length,
+              itemBuilder: (context, index) {
+                final list = BirdList.predefinedLists[index];
+                return ListTile(
+                  title: Text(list.name),
+                  subtitle: Text(list.description),
+                  onTap: () {
+                    ref.read(selectedBirdListProvider.notifier).state = list;
+                  },
+                );
+              },
+            ),
+          ),
+          const Divider(),
+          // Custom Lists Section
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'Custom Lists',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
           Expanded(
             child: ListView.builder(
               itemCount: birdLists.length,
               itemBuilder: (context, index) {
                 final list = birdLists[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
+                return ListTile(
+                  title: Text(list.name),
+                  subtitle: Text('${list.birds.length} birds'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () =>
+                            _showEditListDialog(context, ref, list),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () =>
+                            _showDeleteConfirmation(context, ref, list),
+                      ),
+                    ],
                   ),
-                  child: ListTile(
-                    title: Text(list.name),
-                    subtitle: Text(list.description),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (list.isCustom) ...[
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () =>
-                                _showEditListDialog(context, ref, list),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () =>
-                                _showDeleteConfirmation(context, ref, list),
-                          ),
-                        ],
-                        ElevatedButton(
-                          onPressed: () {
-                            ref.read(selectedBirdListProvider.notifier).state =
-                                list;
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const TrainingSetupScreen(),
-                              ),
-                            );
-                          },
-                          child: const Text('Train'),
-                        ),
-                      ],
-                    ),
-                  ),
+                  onTap: () {
+                    ref.read(selectedBirdListProvider.notifier).state = list;
+                  },
                 );
               },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton.icon(
-              onPressed: () => _showCreateListDialog(context, ref),
-              icon: const Icon(Icons.add),
-              label: const Text('Create New List'),
             ),
           ),
         ],
@@ -94,11 +100,12 @@ class BirdListSelectionScreen extends ConsumerWidget {
     );
   }
 
-  void _showCreateListDialog(BuildContext context, WidgetRef ref) {
+  Future<void> _showCreateListDialog(
+      BuildContext context, WidgetRef ref) async {
     final nameController = TextEditingController();
     final descriptionController = TextEditingController();
 
-    showDialog(
+    return showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Create New List'),
@@ -109,7 +116,6 @@ class BirdListSelectionScreen extends ConsumerWidget {
               controller: nameController,
               decoration: const InputDecoration(labelText: 'List Name'),
             ),
-            const SizedBox(height: 16),
             TextField(
               controller: descriptionController,
               decoration: const InputDecoration(labelText: 'Description'),
@@ -124,10 +130,10 @@ class BirdListSelectionScreen extends ConsumerWidget {
           TextButton(
             onPressed: () {
               final newList = BirdList(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                id: nameController.text.toLowerCase().replaceAll(' ', '_'),
                 name: nameController.text,
                 description: descriptionController.text,
-                birdIds: [],
+                birds: [],
                 isCustom: true,
               );
               ref.read(birdListsProvider.notifier).addCustomList(newList);
@@ -140,59 +146,119 @@ class BirdListSelectionScreen extends ConsumerWidget {
     );
   }
 
-  void _showEditListDialog(BuildContext context, WidgetRef ref, BirdList list) {
+  Future<void> _showEditListDialog(
+      BuildContext context, WidgetRef ref, BirdList list) async {
     final nameController = TextEditingController(text: list.name);
     final descriptionController = TextEditingController(text: list.description);
+    final regionController =
+        TextEditingController(text: list.regions?.first ?? 'US-MA');
+    final ebirdService = ref.read(ebirdServiceProvider);
+    final availableBirds = <Bird>[];
 
-    showDialog(
+    // Fetch available birds for the region
+    try {
+      final regionBirds =
+          await ebirdService.getBirdsByRegion(regionController.text);
+      for (var birdData in regionBirds) {
+        try {
+          final bird = Bird.fromJson(birdData);
+          availableBirds.add(bird);
+        } catch (e) {
+          print('Error converting bird data: $e');
+        }
+      }
+    } catch (e) {
+      print('Error fetching birds: $e');
+    }
+
+    return showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit List'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'List Name'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit List'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'List Name'),
+                ),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                ),
+                TextField(
+                  controller: regionController,
+                  decoration:
+                      const InputDecoration(labelText: 'Region (e.g., US-MA)'),
+                ),
+                const SizedBox(height: 16),
+                const Text('Birds in List:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                ...list.birds
+                    .map((bird) => ListTile(
+                          title: Text(bird.commonName),
+                          subtitle: Text(bird.scientificName),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.remove_circle_outline),
+                            onPressed: () {
+                              setState(() {
+                                list.birds.remove(bird);
+                              });
+                            },
+                          ),
+                        ))
+                    .toList(),
+                const SizedBox(height: 16),
+                const Text('Available Birds:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                ...availableBirds
+                    .where((bird) => !list.birds.contains(bird))
+                    .map((bird) => ListTile(
+                          title: Text(bird.commonName),
+                          subtitle: Text(bird.scientificName),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.add_circle_outline),
+                            onPressed: () {
+                              setState(() {
+                                list.birds.add(bird);
+                              });
+                            },
+                          ),
+                        ))
+                    .toList(),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(labelText: 'Description'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final updatedList = list.copyWith(
+                  name: nameController.text,
+                  description: descriptionController.text,
+                  regions: [regionController.text],
+                );
+                ref
+                    .read(birdListsProvider.notifier)
+                    .updateCustomList(updatedList);
+                Navigator.pop(context);
+              },
+              child: const Text('Save'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final updatedList = BirdList(
-                id: list.id,
-                name: nameController.text,
-                description: descriptionController.text,
-                birdIds: list.birdIds,
-                isCustom: true,
-                regions: list.regions,
-                families: list.families,
-              );
-              ref
-                  .read(birdListsProvider.notifier)
-                  .updateCustomList(updatedList);
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }
 
-  void _showDeleteConfirmation(
-      BuildContext context, WidgetRef ref, BirdList list) {
-    showDialog(
+  Future<void> _showDeleteConfirmation(
+      BuildContext context, WidgetRef ref, BirdList list) async {
+    return showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete List'),
@@ -205,9 +271,6 @@ class BirdListSelectionScreen extends ConsumerWidget {
           TextButton(
             onPressed: () {
               ref.read(birdListsProvider.notifier).removeCustomList(list.id);
-              if (ref.read(selectedBirdListProvider)?.id == list.id) {
-                ref.read(selectedBirdListProvider.notifier).state = null;
-              }
               Navigator.pop(context);
             },
             child: const Text('Delete'),

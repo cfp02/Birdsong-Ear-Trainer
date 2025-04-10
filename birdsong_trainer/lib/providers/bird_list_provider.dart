@@ -40,10 +40,11 @@ final birdsInSelectedListProvider = FutureProvider<List<Bird>>((ref) async {
     }
 
     // Now look up each bird in our list
-    for (final speciesCode in selectedList.birdIds) {
-      final bird = birdMap[speciesCode];
-      if (bird != null) {
-        birds.add(bird);
+    for (final bird in selectedList.birds) {
+      final speciesCode = bird.speciesCode;
+      final regionBird = birdMap[speciesCode];
+      if (regionBird != null) {
+        birds.add(regionBird);
       } else {
         print('Bird not found in region: $speciesCode');
       }
