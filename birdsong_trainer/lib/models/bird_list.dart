@@ -24,18 +24,18 @@ class BirdList {
     String? id,
     String? name,
     String? description,
-    List<String>? regions,
     List<String>? birdIds,
     bool? isCustom,
+    List<String>? regions,
     List<String>? families,
   }) {
     return BirdList(
       id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
-      regions: regions ?? this.regions,
       birdIds: birdIds ?? this.birdIds,
       isCustom: isCustom ?? this.isCustom,
+      regions: regions ?? this.regions,
       families: families ?? this.families,
     );
   }

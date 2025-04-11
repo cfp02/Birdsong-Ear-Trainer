@@ -1,93 +1,43 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import '../services/xeno_canto_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-final audioPlayerProvider =
-    StateNotifierProvider<AudioPlayerNotifier, AudioPlayerState>((ref) {
-  return AudioPlayerNotifier();
+final xenoCantoServiceProvider = Provider<XenoCantoService>((ref) {
+  final apiKey = dotenv.env['XENO_CANTO_API_KEY'] ?? '';
+  return XenoCantoService(apiKey: apiKey);
 });
 
-class AudioPlayerState {
-  final bool isPlaying;
-  final bool isLoading;
-  final String? currentBirdId;
-  final String? error;
+final audioPlayerProvider =
+    StateNotifierProvider<AudioPlayerNotifier, AsyncValue<AudioPlayer>>((ref) {
+  return AudioPlayerNotifier(ref.watch(xenoCantoServiceProvider));
+});
 
-  AudioPlayerState({
-    this.isPlaying = false,
-    this.isLoading = false,
-    this.currentBirdId,
-    this.error,
-  });
-
-  AudioPlayerState copyWith({
-    bool? isPlaying,
-    bool? isLoading,
-    String? currentBirdId,
-    String? error,
-  }) {
-    return AudioPlayerState(
-      isPlaying: isPlaying ?? this.isPlaying,
-      isLoading: isLoading ?? this.isLoading,
-      currentBirdId: currentBirdId ?? this.currentBirdId,
-      error: error ?? this.error,
-    );
-  }
-}
-
-class AudioPlayerNotifier extends StateNotifier<AudioPlayerState> {
+class AudioPlayerNotifier extends StateNotifier<AsyncValue<AudioPlayer>> {
+  final XenoCantoService _xenoCantoService;
   final AudioPlayer _player = AudioPlayer();
-  final XenoCantoService _xenoCantoService = XenoCantoService();
 
-  AudioPlayerNotifier() : super(AudioPlayerState()) {
-    _player.playerStateStream.listen((state) {
-      if (state.processingState == ProcessingState.completed) {
-        this.state = this.state.copyWith(isPlaying: false);
-      }
-    });
+  AudioPlayerNotifier(this._xenoCantoService)
+      : super(const AsyncValue.loading()) {
+    state = AsyncValue.data(_player);
   }
 
-  Future<void> playBirdSong(String birdId) async {
+  Future<void> playBirdAudio(String speciesCode) async {
     try {
-      state = state.copyWith(isLoading: true, currentBirdId: birdId);
-
-      // Get audio URL from Xeno-Canto API
-      final audioUrl = await _xenoCantoService.getBirdAudioUrl(birdId);
-
-      if (audioUrl == null) {
-        throw Exception('No audio available for this bird');
+      final audioUrl = await _xenoCantoService.getBirdAudioUrl(speciesCode);
+      if (audioUrl != null) {
+        await _player.setUrl(audioUrl);
+        await _player.play();
+      } else {
+        print('No audio URL found for species code: $speciesCode');
       }
-
-      await _player.setUrl(audioUrl);
-      await _player.play();
-
-      state = state.copyWith(
-        isPlaying: true,
-        isLoading: false,
-        error: null,
-      );
     } catch (e) {
-      state = state.copyWith(
-        isPlaying: false,
-        isLoading: false,
-        error: e.toString(),
-      );
+      print('Error playing bird audio: $e');
     }
-  }
-
-  Future<void> pause() async {
-    await _player.pause();
-    state = state.copyWith(isPlaying: false);
-  }
-
-  Future<void> resume() async {
-    await _player.play();
-    state = state.copyWith(isPlaying: true);
   }
 
   Future<void> stop() async {
     await _player.stop();
-    state = state.copyWith(isPlaying: false);
   }
 
   @override

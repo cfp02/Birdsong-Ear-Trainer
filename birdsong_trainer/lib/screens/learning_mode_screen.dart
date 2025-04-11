@@ -11,7 +11,7 @@ class LearningModeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(currentTrainingSessionProvider);
-    final audioPlayer = ref.watch(audioPlayerProvider);
+    final audioPlayerAsync = ref.watch(audioPlayerProvider);
 
     if (session == null) {
       return const Scaffold(
@@ -58,36 +58,50 @@ class LearningModeScreen extends ConsumerWidget {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 32),
-                    IconButton(
-                      icon: Icon(
-                        audioPlayer.isPlaying ? Icons.pause : Icons.play_arrow,
-                        size: 64,
+                    audioPlayerAsync.when(
+                      data: (audioPlayer) => IconButton(
+                        icon: Icon(
+                          audioPlayer.playing ? Icons.pause : Icons.play_arrow,
+                          size: 64,
+                        ),
+                        onPressed: () {
+                          if (audioPlayer.playing) {
+                            ref.read(audioPlayerProvider.notifier).stop();
+                          } else {
+                            ref
+                                .read(audioPlayerProvider.notifier)
+                                .playBirdAudio(currentBird.speciesCode);
+                          }
+                        },
                       ),
-                      onPressed: () {
-                        if (audioPlayer.isPlaying) {
-                          ref.read(audioPlayerProvider.notifier).pause();
-                        } else {
-                          ref
-                              .read(audioPlayerProvider.notifier)
-                              .playBirdSong(currentBird.speciesCode);
-                        }
-                      },
+                      loading: () => const CircularProgressIndicator(),
+                      error: (error, stack) => Text(
+                        'Error: $error',
+                        style: const TextStyle(color: Colors.red),
+                      ),
                     ),
                   ] else ...[
-                    IconButton(
-                      icon: Icon(
-                        audioPlayer.isPlaying ? Icons.pause : Icons.play_arrow,
-                        size: 64,
+                    audioPlayerAsync.when(
+                      data: (audioPlayer) => IconButton(
+                        icon: Icon(
+                          audioPlayer.playing ? Icons.pause : Icons.play_arrow,
+                          size: 64,
+                        ),
+                        onPressed: () {
+                          if (audioPlayer.playing) {
+                            ref.read(audioPlayerProvider.notifier).stop();
+                          } else {
+                            ref
+                                .read(audioPlayerProvider.notifier)
+                                .playBirdAudio(currentBird.speciesCode);
+                          }
+                        },
                       ),
-                      onPressed: () {
-                        if (audioPlayer.isPlaying) {
-                          ref.read(audioPlayerProvider.notifier).pause();
-                        } else {
-                          ref
-                              .read(audioPlayerProvider.notifier)
-                              .playBirdSong(currentBird.speciesCode);
-                        }
-                      },
+                      loading: () => const CircularProgressIndicator(),
+                      error: (error, stack) => Text(
+                        'Error: $error',
+                        style: const TextStyle(color: Colors.red),
+                      ),
                     ),
                     const SizedBox(height: 32),
                     Text(

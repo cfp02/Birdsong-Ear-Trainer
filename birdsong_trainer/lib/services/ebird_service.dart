@@ -93,16 +93,34 @@ class EBirdService {
   Future<Map<String, dynamic>?> getBirdData(String speciesCode) async {
     try {
       final response = await _client.get(
-        Uri.parse('$_baseUrl/ref/taxonomy/ebird?speciesCode=$speciesCode'),
+        Uri.parse('$_baseUrl/ref/taxonomy/ebird'),
         headers: {
           'X-eBirdApiToken': apiKey,
+          'Accept': 'text/csv',
         },
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        if (data.isNotEmpty) {
-          return data.first;
+        final csvData = response.body;
+        final lines = csvData.split('\n');
+        if (lines.length < 2) return null;
+
+        // Get headers from first line
+        final headers = lines[0].split(',');
+
+        // Find the line with matching species code
+        for (var i = 1; i < lines.length; i++) {
+          final values = lines[i].split(',');
+          if (values.length != headers.length) continue;
+
+          final birdData = <String, dynamic>{};
+          for (var j = 0; j < headers.length; j++) {
+            birdData[headers[j].toLowerCase()] = values[j];
+          }
+
+          if (birdData['species_code'] == speciesCode) {
+            return birdData;
+          }
         }
         return null;
       } else {

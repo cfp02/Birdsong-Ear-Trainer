@@ -3,34 +3,39 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class XenoCantoService {
-  static const String _baseUrl = 'https://xeno-canto.org/api/3/recordings';
-  late final String _apiKey;
+  static const String _baseUrl = 'https://xeno-canto.org/api/3';
+  final String apiKey;
+  final http.Client _client = http.Client();
 
-  XenoCantoService() {
-    _apiKey = dotenv.env['XENO_CANTO_API_KEY'] ?? '';
-    if (_apiKey.isEmpty) {
+  XenoCantoService({required this.apiKey}) {
+    if (apiKey.isEmpty) {
       throw Exception('XENO_CANTO_API_KEY not found in .env file');
     }
   }
 
   Future<String?> getBirdAudioUrl(String speciesCode) async {
     try {
-      // First, get the bird's common name from eBird species code
-      final response = await http.get(
-        Uri.parse('$_baseUrl?query=sp:$speciesCode&key=$_apiKey'),
+      final response = await _client.get(
+        Uri.parse(
+            '$_baseUrl/recordings?query=sp:"$speciesCode"+grp:birds&key=$apiKey'),
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['recordings'] != null && data['recordings'].isNotEmpty) {
-          // Get the first recording's download URL
-          final recording = data['recordings'][0];
+          // Get the first recording with quality A or B
+          final recording = data['recordings'].firstWhere(
+            (rec) => rec['q'] == 'A' || rec['q'] == 'B',
+            orElse: () => data['recordings'][0],
+          );
           return 'https:${recording['file']}';
         }
+      } else {
+        print('Failed to fetch audio URL: ${response.statusCode}');
       }
       return null;
     } catch (e) {
-      print('Error fetching Xeno-Canto audio: $e');
+      print('Error in getBirdAudioUrl: $e');
       return null;
     }
   }
@@ -58,7 +63,7 @@ class XenoCantoService {
       }
 
       final response = await http.get(
-        Uri.parse('$_baseUrl?query=$query&key=$_apiKey'),
+        Uri.parse('$_baseUrl?query=$query&key=$apiKey'),
       );
 
       if (response.statusCode == 200) {
