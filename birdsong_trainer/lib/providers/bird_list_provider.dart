@@ -1,62 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/bird.dart';
 import '../models/bird_list.dart';
+import '../models/bird.dart';
 import '../providers/ebird_provider.dart';
-
-final birdListsProvider =
-    StateNotifierProvider<BirdListsNotifier, List<BirdList>>((ref) {
-  return BirdListsNotifier();
-});
-
-final selectedBirdListProvider = StateProvider<BirdList?>((ref) => null);
-
-final birdsInSelectedListProvider = FutureProvider<List<Bird>>((ref) async {
-  final selectedList = ref.watch(selectedBirdListProvider);
-  if (selectedList == null) return [];
-
-  final ebirdService = ref.watch(ebirdServiceProvider);
-  final birds = <Bird>[];
-
-  // Get the first region from the list, or use a default if none specified
-  final region = selectedList.regions?.firstOrNull ?? 'US-MA';
-  print('Fetching birds for region: $region');
-
-  try {
-    // Fetch all birds for the region first
-    final regionBirds = await ebirdService.getBirdsByRegion(region);
-    print('Found ${regionBirds.length} birds in region');
-
-    // Convert JSON data to Bird objects and create a map
-    final birdMap = <String, Bird>{};
-    for (var birdData in regionBirds) {
-      try {
-        final speciesCode = birdData['speciesCode'] as String?;
-        if (speciesCode != null) {
-          birdMap[speciesCode] = Bird.fromJson(birdData);
-        }
-      } catch (e) {
-        print('Error converting bird data: $e');
-      }
-    }
-
-    // Now look up each bird in our list
-    for (final bird in selectedList.birds) {
-      final speciesCode = bird.speciesCode;
-      final regionBird = birdMap[speciesCode];
-      if (regionBird != null) {
-        birds.add(regionBird);
-      } else {
-        print('Bird not found in region: $speciesCode');
-      }
-    }
-
-    print('Found ${birds.length} birds from the list in the region');
-    return birds;
-  } catch (e) {
-    print('Error fetching birds: $e');
-    rethrow;
-  }
-});
+import '../services/ebird_service.dart';
 
 class BirdListsNotifier extends StateNotifier<List<BirdList>> {
   BirdListsNotifier() : super(BirdList.predefinedLists);
@@ -75,3 +21,46 @@ class BirdListsNotifier extends StateNotifier<List<BirdList>> {
         .toList();
   }
 }
+
+final birdListsProvider =
+    StateNotifierProvider<BirdListsNotifier, List<BirdList>>((ref) {
+  return BirdListsNotifier();
+});
+
+final selectedBirdListProvider = StateProvider<BirdList?>((ref) => null);
+
+final birdsInSelectedListProvider = FutureProvider<List<Bird>>((ref) async {
+  final selectedList = ref.watch(selectedBirdListProvider);
+  final ebirdService = ref.watch(ebirdServiceProvider);
+
+  if (selectedList == null) {
+    return [];
+  }
+
+  try {
+    final birds = <Bird>[];
+    for (final speciesCode in selectedList.birdIds) {
+      try {
+        final birdData = await ebirdService.getBirdData(speciesCode);
+        if (birdData != null) {
+          birds.add(Bird(
+            speciesCode: birdData['speciesCode'] ?? speciesCode,
+            commonName: birdData['comName'] ?? 'Unknown',
+            scientificName: birdData['sciName'] ?? 'Unknown',
+            family: birdData['familyComName'],
+            region: selectedList.regions.first,
+            difficulty: 1, // Default difficulty
+          ));
+        }
+      } catch (e) {
+        print('Error fetching bird data for $speciesCode: $e');
+        // Continue with next bird even if one fails
+      }
+    }
+    print('Successfully fetched ${birds.length} birds');
+    return birds;
+  } catch (e) {
+    print('Error in birdsInSelectedListProvider: $e');
+    rethrow;
+  }
+});

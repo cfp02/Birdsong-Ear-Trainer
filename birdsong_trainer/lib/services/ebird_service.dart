@@ -5,11 +5,11 @@ import '../models/bird.dart';
 
 class EBirdService {
   static const String _baseUrl = 'https://api.ebird.org/v2';
-  late final String _apiKey;
+  final String apiKey;
+  final http.Client _client = http.Client();
 
-  EBirdService() {
-    _apiKey = dotenv.env['EBIRD_API_KEY'] ?? '';
-    if (_apiKey.isEmpty) {
+  EBirdService({required this.apiKey}) {
+    if (apiKey.isEmpty) {
       throw Exception('EBIRD_API_KEY not found in .env file');
     }
   }
@@ -18,7 +18,7 @@ class EBirdService {
     final response = await http.get(
       Uri.parse('$_baseUrl/ref/region/list/subnational1/US'),
       headers: {
-        'X-eBirdApiToken': _apiKey,
+        'X-eBirdApiToken': apiKey,
       },
     );
 
@@ -40,7 +40,7 @@ class EBirdService {
     final response = await http.get(
       Uri.parse('$_baseUrl/data/obs/$regionCode/recent'),
       headers: {
-        'X-eBirdApiToken': _apiKey,
+        'X-eBirdApiToken': apiKey,
       },
     );
 
@@ -65,5 +65,53 @@ class EBirdService {
     // This would require a different endpoint or filtering logic
     // as eBird doesn't directly support family-based queries
     throw UnimplementedError('Family-based queries not yet implemented');
+  }
+
+  Future<String?> getBirdAudioUrl(String speciesCode) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/ref/taxonomy/ebird?speciesCode=$speciesCode'),
+        headers: {
+          'X-eBirdApiToken': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // Note: This is a placeholder - the actual audio URL would need to be fetched
+        // from a different source like Xeno-Canto or Macaulay Library
+        return null;
+      } else {
+        throw Exception('Failed to fetch bird data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching audio URL: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getBirdData(String speciesCode) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$_baseUrl/ref/taxonomy/ebird?speciesCode=$speciesCode'),
+        headers: {
+          'X-eBirdApiToken': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        if (data.isNotEmpty) {
+          return data.first;
+        }
+        return null;
+      } else {
+        print('Failed to fetch bird data: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error in getBirdData: $e');
+      return null;
+    }
   }
 }

@@ -3,14 +3,24 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'screens/home_screen.dart';
 import 'screens/bird_list_selection_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/training_setup_route.dart';
+import 'screens/training_screen.dart';
+import 'providers/settings_provider.dart';
+import 'providers/bird_list_provider.dart';
 
 void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
 
     // Load environment variables
-    await dotenv.load();
+    await dotenv.load(fileName: ".env");
+    final apiKey = dotenv.env['EBIRD_API_KEY'];
+    if (apiKey == null) {
+      throw Exception('EBIRD_API_KEY not found in .env file');
+    }
 
     // Set preferred orientations
     await SystemChrome.setPreferredOrientations([
@@ -39,11 +49,11 @@ void main() async {
   }
 }
 
-class BirdsongTrainerApp extends StatelessWidget {
+class BirdsongTrainerApp extends ConsumerWidget {
   const BirdsongTrainerApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'Birdsong Trainer',
       debugShowCheckedModeBanner: false,
@@ -73,55 +83,13 @@ class BirdsongTrainerApp extends StatelessWidget {
           backgroundColor: Colors.transparent,
         ),
       ),
-      home: const HomeScreen(),
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Birdsong Trainer'),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Welcome to Birdsong Trainer',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Start your bird song identification journey',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 40),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const BirdListSelectionScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text('Start Training'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const HomeScreen(),
+        '/bird-lists': (context) => const BirdListSelectionScreen(),
+        '/settings': (context) => const SettingsScreen(),
+        '/training': (context) => const TrainingSetupRoute(),
+      },
     );
   }
 }

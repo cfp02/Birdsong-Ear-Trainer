@@ -57,6 +57,9 @@ dependencies:
   # Database management
   sqflite: ^2.3.0
   path: ^1.8.3
+  
+  # Shared preferences
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:

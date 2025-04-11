@@ -19,6 +19,7 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
   late TextEditingController descriptionController;
   late TextEditingController regionController;
   List<Bird> availableBirds = [];
+  List<String> selectedBirdIds = [];
   bool isLoading = true;
 
   @override
@@ -28,7 +29,8 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
     descriptionController =
         TextEditingController(text: widget.list.description);
     regionController =
-        TextEditingController(text: widget.list.regions?.first ?? 'US-MA');
+        TextEditingController(text: widget.list.regions.firstOrNull ?? 'US-MA');
+    selectedBirdIds = List.from(widget.list.birdIds);
     _loadBirds();
   }
 
@@ -73,6 +75,7 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
                 name: nameController.text,
                 description: descriptionController.text,
                 regions: [regionController.text],
+                birdIds: selectedBirdIds,
               );
               ref
                   .read(birdListsProvider.notifier)
@@ -131,9 +134,17 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
                       children: [
                         // Birds in List Tab
                         ListView.builder(
-                          itemCount: widget.list.birds.length,
+                          itemCount: selectedBirdIds.length,
                           itemBuilder: (context, index) {
-                            final bird = widget.list.birds[index];
+                            final birdId = selectedBirdIds[index];
+                            final bird = availableBirds.firstWhere(
+                              (b) => b.speciesCode == birdId,
+                              orElse: () => Bird(
+                                speciesCode: birdId,
+                                commonName: 'Unknown',
+                                scientificName: 'Unknown',
+                              ),
+                            );
                             return ListTile(
                               title: Text(bird.commonName),
                               subtitle: Text(bird.scientificName),
@@ -141,7 +152,7 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
                                 icon: const Icon(Icons.remove_circle_outline),
                                 onPressed: () {
                                   setState(() {
-                                    widget.list.birds.remove(bird);
+                                    selectedBirdIds.remove(birdId);
                                   });
                                 },
                               ),
@@ -155,8 +166,8 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
                                 itemCount: availableBirds.length,
                                 itemBuilder: (context, index) {
                                   final bird = availableBirds[index];
-                                  final isInList =
-                                      widget.list.birds.contains(bird);
+                                  final isInList = selectedBirdIds
+                                      .contains(bird.speciesCode);
                                   return ListTile(
                                     title: Text(bird.commonName),
                                     subtitle: Text(bird.scientificName),
@@ -170,7 +181,8 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
                                           ? null
                                           : () {
                                               setState(() {
-                                                widget.list.birds.add(bird);
+                                                selectedBirdIds
+                                                    .add(bird.speciesCode);
                                               });
                                             },
                                     ),

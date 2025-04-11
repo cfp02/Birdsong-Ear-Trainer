@@ -3,12 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/ebird_provider.dart';
 import '../providers/training_preferences_provider.dart';
 import '../models/region.dart';
+import '../providers/settings_provider.dart';
+import '../services/ebird_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
     final regions = ref.watch(regionsProvider);
     final selectedRegion = ref.watch(selectedRegionProvider);
     final preferences = ref.watch(trainingPreferencesProvider);
@@ -131,7 +134,81 @@ class SettingsScreen extends ConsumerWidget {
               }
             },
           ),
+          ListTile(
+            title: const Text('Default Region'),
+            subtitle: Text(settings.defaultRegion),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () async {
+              final regionList = await regions.value;
+              if (regionList == null) return;
+
+              final selectedRegion = await showDialog<String>(
+                context: context,
+                builder: (context) => RegionSelectionDialog(
+                  currentRegion: settings.defaultRegion,
+                  regions: regionList.map((r) => r.code).toList(),
+                ),
+              );
+              if (selectedRegion != null) {
+                ref
+                    .read(settingsProvider.notifier)
+                    .updateDefaultRegion(selectedRegion);
+              }
+            },
+          ),
+          SwitchListTile(
+            title: const Text('Show Scientific Names'),
+            value: settings.showScientificNames,
+            onChanged: (value) {
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateShowScientificNames(value);
+            },
+          ),
+          SwitchListTile(
+            title: const Text('Auto Play Next'),
+            value: settings.autoPlayNext,
+            onChanged: (value) {
+              ref.read(settingsProvider.notifier).updateAutoPlayNext(value);
+            },
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class RegionSelectionDialog extends StatelessWidget {
+  final String currentRegion;
+  final List<String> regions;
+
+  const RegionSelectionDialog({
+    super.key,
+    required this.currentRegion,
+    required this.regions,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Select Default Region'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: regions.length,
+          itemBuilder: (context, index) {
+            final region = regions[index];
+            return RadioListTile<String>(
+              title: Text(region),
+              value: region,
+              groupValue: currentRegion,
+              onChanged: (value) {
+                Navigator.of(context).pop(value);
+              },
+            );
+          },
+        ),
       ),
     );
   }

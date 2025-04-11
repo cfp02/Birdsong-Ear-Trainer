@@ -38,14 +38,21 @@ class Bird {
   }
 
   factory Bird.fromEBirdJson(Map<String, dynamic> json) {
-    print('Creating bird from JSON: $json');
+    final speciesCode = json['speciesCode'] as String?;
+    final commonName = json['comName'] as String?;
+    final scientificName = json['sciName'] as String?;
+
+    if (speciesCode == null || commonName == null || scientificName == null) {
+      throw FormatException('Missing required fields in eBird JSON data');
+    }
+
     return Bird(
-      speciesCode: json['speciesCode'] ?? '',
-      commonName: json['comName'] ?? '',
-      scientificName: json['sciName'] ?? '',
-      family: '', // We'll need to get this from another source
-      region: json['locName'] ?? '',
-      difficulty: 3, // Default difficulty
+      speciesCode: speciesCode,
+      commonName: commonName,
+      scientificName: scientificName,
+      family: json['familyComName'] as String?,
+      region: json['locName'] as String?,
+      difficulty: 1, // Default to easier difficulty
     );
   }
 }
