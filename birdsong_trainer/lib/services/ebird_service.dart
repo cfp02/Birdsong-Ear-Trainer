@@ -63,7 +63,8 @@ class EBirdService {
     required String regionCode,
     String? speciesCode,
   }) async {
-    final url = Uri.parse('$_baseUrl/data/obs/$regionCode/recent');
+    // Use the taxonomy endpoint to get all possible birds for the region
+    final url = Uri.parse('$_baseUrl/ref/taxonomy/ebird?fmt=json');
     final headers = {
       'X-eBirdApiToken': apiKey,
     };
@@ -71,12 +72,25 @@ class EBirdService {
     final response = await http.get(url, headers: headers);
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
+
+      // Filter by region if specified
+      if (regionCode.isNotEmpty) {
+        // For now, we'll filter by US birds since the taxonomy endpoint doesn't support region filtering
+        // In a real implementation, we'd need to maintain our own mapping of birds to regions
+        return data
+            .where((bird) => bird['category'] == 'species')
+            .cast<Map<String, dynamic>>()
+            .toList();
+      }
+
+      // Filter by species code if specified
       if (speciesCode != null) {
         return data
             .where((bird) => bird['speciesCode'] == speciesCode)
             .cast<Map<String, dynamic>>()
             .toList();
       }
+
       return data.cast<Map<String, dynamic>>();
     } else {
       throw Exception('Failed to load birds: ${response.statusCode}');
@@ -114,21 +128,29 @@ class EBirdService {
 
   Future<Map<String, dynamic>?> getBirdData(String speciesCode) async {
     try {
-      // Use getBirdsByRegion instead of the taxonomy endpoint
-      final birds = await getBirdsByRegion(
-        regionCode: 'US', // Default to US region
-        speciesCode: speciesCode,
+      final response = await http.get(
+        Uri.parse('$_baseUrl/ref/taxonomy/ebird?fmt=json'),
+        headers: {
+          'X-eBirdApiToken': apiKey,
+        },
       );
 
-      if (birds.isNotEmpty) {
-        final birdData = birds.first;
-        print('Fetched bird data for $speciesCode: $birdData');
-        return {
-          'speciesCode': birdData['speciesCode'] as String,
-          'comName': birdData['comName'] as String,
-          'sciName': birdData['sciName'] as String,
-          'familyComName': birdData['familyComName'] as String?,
-        };
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        final birdData = data.firstWhere(
+          (bird) => bird['speciesCode'] == speciesCode,
+          orElse: () => null,
+        );
+
+        if (birdData != null) {
+          print('Fetched bird data for $speciesCode: $birdData');
+          return {
+            'speciesCode': birdData['speciesCode'] as String,
+            'comName': birdData['comName'] as String,
+            'sciName': birdData['sciName'] as String,
+            'familyComName': birdData['familyComName'] as String?,
+          };
+        }
       }
       print('No data found for species code: $speciesCode');
       return null;

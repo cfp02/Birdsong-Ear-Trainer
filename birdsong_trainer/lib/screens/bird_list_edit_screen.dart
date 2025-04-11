@@ -17,13 +17,14 @@ class BirdListEditScreen extends ConsumerStatefulWidget {
 class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
   late TextEditingController nameController;
   late TextEditingController descriptionController;
-  late TextEditingController regionController;
   late TextEditingController searchController;
   List<Bird> availableBirds = [];
   List<String> selectedBirdIds = [];
   bool isLoading = true;
   String? selectedFamily;
   String searchText = '';
+  List<Map<String, dynamic>> regions = [];
+  String? selectedRegion;
 
   @override
   void initState() {
@@ -31,20 +32,33 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
     nameController = TextEditingController(text: widget.list.name);
     descriptionController =
         TextEditingController(text: widget.list.description);
-    regionController = TextEditingController(
-      text: widget.list.regions?.firstOrNull ?? 'US-MA',
-    );
     searchController = TextEditingController();
     selectedBirdIds = List.from(widget.list.birdIds);
+    selectedRegion = widget.list.regions?.firstOrNull ?? 'US-MA';
+    _loadRegions();
     _loadBirds();
   }
 
+  Future<void> _loadRegions() async {
+    try {
+      final ebirdService = ref.read(ebirdServiceProvider);
+      final loadedRegions = await ebirdService.getRegions();
+      setState(() {
+        regions = loadedRegions;
+      });
+    } catch (e) {
+      print('Error loading regions: $e');
+    }
+  }
+
   Future<void> _loadBirds() async {
+    if (selectedRegion == null) return;
+
     setState(() => isLoading = true);
     try {
       final ebirdService = ref.read(ebirdServiceProvider);
       final regionBirds = await ebirdService.getBirdsByRegion(
-        regionCode: regionController.text,
+        regionCode: selectedRegion!,
       );
 
       final List<Bird> loadedBirds = [];
@@ -58,8 +72,7 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
         }
       }
 
-      print(
-          'Loaded ${loadedBirds.length} birds from region ${regionController.text}');
+      print('Loaded ${loadedBirds.length} birds from region $selectedRegion');
       print('Selected bird IDs: $selectedBirdIds');
 
       // Check which selected birds are not found in the loaded birds
@@ -107,7 +120,6 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
   void dispose() {
     nameController.dispose();
     descriptionController.dispose();
-    regionController.dispose();
     searchController.dispose();
     super.dispose();
   }
@@ -124,7 +136,7 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
               final updatedList = widget.list.copyWith(
                 name: nameController.text,
                 description: descriptionController.text,
-                regions: [regionController.text],
+                regions: [selectedRegion ?? 'US-MA'],
                 birdIds: selectedBirdIds,
               );
               ref
@@ -152,10 +164,23 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: TextField(
-                        controller: regionController,
+                      child: DropdownButtonFormField<String>(
+                        value: selectedRegion,
                         decoration: const InputDecoration(
-                            labelText: 'Region (e.g., US-MA)'),
+                          labelText: 'Region',
+                        ),
+                        items: regions.map((region) {
+                          return DropdownMenuItem<String>(
+                            value: region['code'],
+                            child: Text(region['name']),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedRegion = value;
+                          });
+                          _loadBirds();
+                        },
                       ),
                     ),
                     IconButton(
@@ -214,26 +239,28 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
                           children: [
                             Padding(
                               padding: const EdgeInsets.all(8.0),
-                              child: Row(
+                              child: Column(
                                 children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: searchController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Search birds',
-                                        prefixIcon: Icon(Icons.search),
-                                      ),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          searchText = value;
-                                        });
-                                      },
+                                  TextField(
+                                    controller: searchController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Search birds',
+                                      prefixIcon: Icon(Icons.search),
                                     ),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        searchText = value;
+                                      });
+                                    },
                                   ),
-                                  const SizedBox(width: 8),
-                                  DropdownButton<String>(
+                                  const SizedBox(height: 8),
+                                  DropdownButtonFormField<String>(
                                     value: selectedFamily,
-                                    hint: const Text('Filter by family'),
+                                    isExpanded: true,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Filter by family',
+                                      border: OutlineInputBorder(),
+                                    ),
                                     items: [
                                       const DropdownMenuItem<String>(
                                         value: null,
