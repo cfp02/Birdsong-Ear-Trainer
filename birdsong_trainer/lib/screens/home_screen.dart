@@ -24,13 +24,6 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/training');
-              },
-              child: const Text('Training'),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
                 Navigator.pushNamed(context, '/settings');
               },
               child: const Text('Settings'),
