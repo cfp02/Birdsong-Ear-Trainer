@@ -17,7 +17,7 @@ class HomeScreen extends ConsumerWidget {
           children: [
             ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/bird-lists');
+                Navigator.pushNamed(context, '/lists');
               },
               child: const Text('Select Bird List'),
             ),

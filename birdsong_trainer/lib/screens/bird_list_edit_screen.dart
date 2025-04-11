@@ -28,8 +28,9 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
     nameController = TextEditingController(text: widget.list.name);
     descriptionController =
         TextEditingController(text: widget.list.description);
-    regionController =
-        TextEditingController(text: widget.list.regions.firstOrNull ?? 'US-MA');
+    regionController = TextEditingController(
+      text: widget.list.regions?.firstOrNull ?? 'US-MA',
+    );
     selectedBirdIds = List.from(widget.list.birdIds);
     _loadBirds();
   }
@@ -38,14 +39,36 @@ class _BirdListEditScreenState extends ConsumerState<BirdListEditScreen> {
     setState(() => isLoading = true);
     try {
       final ebirdService = ref.read(ebirdServiceProvider);
-      final regionBirds =
-          await ebirdService.getBirdsByRegion(regionController.text);
+      final regionBirds = await ebirdService.getBirdsByRegion(
+        regionCode: regionController.text,
+      );
+
+      final List<Bird> loadedBirds = [];
+      for (final birdData in regionBirds) {
+        try {
+          final bird = Bird.fromEBirdJson(birdData);
+          loadedBirds.add(bird);
+        } catch (e) {
+          print('Error parsing bird data: $e');
+          print('Problematic bird data: $birdData');
+        }
+      }
+
+      print(
+          'Loaded ${loadedBirds.length} birds from region ${regionController.text}');
+      print('Selected bird IDs: $selectedBirdIds');
+
+      // Check which selected birds are not found in the loaded birds
+      final loadedBirdIds = loadedBirds.map((b) => b.speciesCode).toSet();
+      final missingBirdIds =
+          selectedBirdIds.where((id) => !loadedBirdIds.contains(id)).toList();
+      if (missingBirdIds.isNotEmpty) {
+        print(
+            'Warning: Some selected birds not found in region: $missingBirdIds');
+      }
+
       setState(() {
-        availableBirds = regionBirds
-            .map((birdData) => Bird.fromJson(birdData))
-            .where((bird) => bird != null)
-            .cast<Bird>()
-            .toList();
+        availableBirds = loadedBirds;
         isLoading = false;
       });
     } catch (e) {

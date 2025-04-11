@@ -3,6 +3,8 @@ import '../models/training_session.dart';
 import '../models/bird_list.dart';
 import '../models/bird.dart';
 
+final selectedBirdsProvider = StateProvider<List<Bird>>((ref) => []);
+
 final currentTrainingSessionProvider =
     StateProvider<TrainingSession?>((ref) => null);
 
@@ -13,17 +15,22 @@ final trainingProgressProvider = Provider<double>((ref) {
 
 final trainingSessionNotifierProvider =
     StateNotifierProvider<TrainingSessionNotifier, TrainingSession?>((ref) {
-  return TrainingSessionNotifier();
+  return TrainingSessionNotifier(ref);
 });
 
 class TrainingSessionNotifier extends StateNotifier<TrainingSession?> {
-  TrainingSessionNotifier() : super(null);
+  final Ref ref;
+
+  TrainingSessionNotifier(this.ref) : super(null);
 
   void startLearningSession({
     required String name,
     required List<Bird> birds,
     required bool isPreviewMode,
   }) {
+    // Update the selected birds provider
+    ref.read(selectedBirdsProvider.notifier).state = birds;
+
     state = TrainingSession.learning(
       name: name,
       birds: birds,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/audio_player_provider.dart';
 import '../providers/bird_list_provider.dart';
+import '../providers/training_provider.dart';
 import '../models/bird.dart';
 
 class TrainingScreen extends ConsumerStatefulWidget {
@@ -22,10 +23,10 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
   }
 
   Future<void> _loadNextBird() async {
-    final birds = await ref.read(birdsInSelectedListProvider.future);
-    if (birds.isNotEmpty) {
+    final session = ref.read(trainingSessionNotifierProvider);
+    if (session != null && session.birds.isNotEmpty) {
       setState(() {
-        _currentBird = birds[0]; // For now, just use the first bird
+        _currentBird = session.currentBird;
       });
     }
   }
@@ -42,9 +43,37 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(trainingSessionNotifierProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Training'),
+        actions: [
+          if (session != null) ...[
+            IconButton(
+              icon: const Icon(Icons.skip_previous),
+              onPressed: session.canGoPrevious
+                  ? () {
+                      ref
+                          .read(trainingSessionNotifierProvider.notifier)
+                          .previousBird();
+                      _loadNextBird();
+                    }
+                  : null,
+            ),
+            IconButton(
+              icon: const Icon(Icons.skip_next),
+              onPressed: session.canGoNext
+                  ? () {
+                      ref
+                          .read(trainingSessionNotifierProvider.notifier)
+                          .nextBird();
+                      _loadNextBird();
+                    }
+                  : null,
+            ),
+          ],
+        ],
       ),
       body: Center(
         child: Column(
@@ -64,6 +93,10 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               ElevatedButton(
                 onPressed: _isPlaying ? null : _playBirdAudio,
                 child: Text(_isPlaying ? 'Playing...' : 'Play Sound'),
+              ),
+              const SizedBox(height: 16),
+              LinearProgressIndicator(
+                value: session?.progress ?? 0,
               ),
             ] else
               const CircularProgressIndicator(),

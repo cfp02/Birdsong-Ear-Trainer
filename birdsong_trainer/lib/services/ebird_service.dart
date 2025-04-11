@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/bird.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class EBirdService {
   static const String _baseUrl = 'https://api.ebird.org/v2';
@@ -35,27 +36,48 @@ class EBirdService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getBirdsByRegion(String regionCode) async {
-    print('Fetching birds for region: $regionCode');
-    final response = await http.get(
-      Uri.parse('$_baseUrl/data/obs/$regionCode/recent'),
-      headers: {
-        'X-eBirdApiToken': apiKey,
-      },
-    );
+  Future<List<Bird>> getPredefinedBirds() async {
+    // Return our predefined list of birds
+    return [
+      Bird(
+        speciesCode: 'btbwar',
+        commonName: 'Black-throated Blue Warbler',
+        scientificName: 'Setophaga caerulescens',
+        family: 'Parulidae',
+        region: 'US',
+        difficulty: 1,
+      ),
+      Bird(
+        speciesCode: 'btgwar',
+        commonName: 'Black-throated Green Warbler',
+        scientificName: 'Setophaga virens',
+        family: 'Parulidae',
+        region: 'US',
+        difficulty: 1,
+      ),
+      // Add more predefined birds here
+    ];
+  }
 
+  Future<List<Map<String, dynamic>>> getBirdsByRegion({
+    required String regionCode,
+    String? speciesCode,
+  }) async {
+    final url = Uri.parse('$_baseUrl/data/obs/$regionCode/recent');
+    final headers = {
+      'X-eBirdApiToken': apiKey,
+    };
+
+    final response = await http.get(url, headers: headers);
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
-      return data
-          .map((bird) => {
-                'comName': bird['comName'],
-                'sciName': bird['sciName'],
-                'speciesCode': bird['speciesCode'],
-                'familyComName': bird['familyComName'],
-                'order': bird['order'],
-                'locName': bird['locName'],
-              })
-          .toList();
+      if (speciesCode != null) {
+        return data
+            .where((bird) => bird['speciesCode'] == speciesCode)
+            .cast<Map<String, dynamic>>()
+            .toList();
+      }
+      return data.cast<Map<String, dynamic>>();
     } else {
       throw Exception('Failed to load birds: ${response.statusCode}');
     }
@@ -92,44 +114,20 @@ class EBirdService {
 
   Future<Map<String, dynamic>?> getBirdData(String speciesCode) async {
     try {
-      final response = await _client.get(
-        Uri.parse('$_baseUrl/ref/taxonomy/ebird'),
-        headers: {
-          'X-eBirdApiToken': apiKey,
-          'Accept': 'text/csv',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final csvData = response.body;
-        final lines = csvData.split('\n');
-        if (lines.length < 2) return null;
-
-        // Get headers from first line
-        final headers = lines[0].split(',');
-
-        // Find the line with matching species code
-        for (var i = 1; i < lines.length; i++) {
-          final values = lines[i].split(',');
-          if (values.length != headers.length) continue;
-
-          final birdData = <String, dynamic>{};
-          for (var j = 0; j < headers.length; j++) {
-            birdData[headers[j].toLowerCase()] = values[j];
-          }
-
-          if (birdData['species_code'] == speciesCode) {
-            return birdData;
-          }
-        }
-        return null;
-      } else {
-        print('Failed to fetch bird data: ${response.statusCode}');
-        return null;
+      final birds =
+          await getBirdsByRegion(regionCode: 'US', speciesCode: speciesCode);
+      if (birds.isNotEmpty) {
+        return birds.first;
       }
+      return null;
     } catch (e) {
-      print('Error in getBirdData: $e');
+      print('Error fetching bird data for $speciesCode: $e');
       return null;
     }
   }
 }
+
+final eBirdServiceProvider = Provider<EBirdService>((ref) {
+  final apiKey = const String.fromEnvironment('EBIRD_API_KEY');
+  return EBirdService(apiKey: apiKey);
+});

@@ -25,7 +25,12 @@ To maintain compatibility and effectiveness:
   - [✅] Build bird selection and filtering UI
   - [✅] Implement bird list management system
   - [🔄] Implement audio playback system
-  - [ ] Add training mode logic
+  - [🔄] Add training mode logic
+    - [ ] Fix bird selection persistence
+    - [ ] Add next/previous bird navigation
+    - [ ] Implement automatic progression
+    - [ ] Add progress tracking
+    - [ ] Fix audio playback functionality
 
 ## Progress Log
 <details>
@@ -204,6 +209,40 @@ To maintain compatibility and effectiveness:
   - Custom list creation and editing
   - Region-based bird filtering
   - Full-screen list editor with tabbed interface
+- [🔄] Training Mode Implementation
+  - [ ] Bird Selection Fixes
+    - Fix persistence of selected birds
+    - Add validation for empty selections
+    - Implement proper state management
+  - [ ] Training Flow Improvements
+    - Add next/previous navigation
+    - Implement automatic progression
+    - Add progress indicators
+    - Add pause/resume functionality
+  - [ ] Audio Playback
+    - Fix current playback issues
+    - Add volume control
+    - Add replay functionality
+    - Add visual indicators
+  - [ ] UI/UX Improvements
+    - Add bird images
+    - Show family information
+    - Add difficulty indicators
+    - Add progress tracking
+  - [ ] Training Modes
+    - Random mode
+    - Difficulty-based mode
+    - Family-based mode
+    - Quiz mode
+  - [ ] Progress Tracking
+    - Session progress
+    - Learning status
+    - Performance statistics
+  - [ ] Settings
+    - Progression timing
+    - Audio preferences
+    - Training mode preferences
+    - Difficulty settings
 
 ### Phase 3: Bird List & User Controls 🔄
 - [✅] Species/group selector UI
@@ -265,6 +304,15 @@ To maintain compatibility and effectiveness:
   - No scoring, pure learning experience
   - Option to repeat songs
   - Progress tracking for learned birds
+  - Navigation controls:
+    - Next/Previous buttons
+    - Automatic progression
+    - Pause/Resume functionality
+  - Visual feedback:
+    - Progress indicators
+    - Bird images
+    - Family information
+    - Difficulty indicators
 
 - **Speed ID Mode**
   - Play bird song

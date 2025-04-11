@@ -25,6 +25,6 @@ final selectedRegionProvider = StateProvider<String>((ref) {
 final birdsProvider =
     FutureProvider.family<List<Bird>, String>((ref, regionCode) async {
   final service = ref.watch(ebirdServiceProvider);
-  final birds = await service.getBirdsByRegion(regionCode);
+  final birds = await service.getBirdsByRegion(regionCode: regionCode);
   return birds.map((bird) => Bird.fromJson(bird)).toList();
 });

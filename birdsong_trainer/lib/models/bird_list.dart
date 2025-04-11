@@ -7,7 +7,7 @@ class BirdList {
   final String description;
   final List<String> birdIds;
   final bool isCustom;
-  final List<String> regions;
+  final List<String>? regions;
   final List<String>? families;
 
   const BirdList({
@@ -16,9 +16,76 @@ class BirdList {
     required this.description,
     required this.birdIds,
     this.isCustom = false,
-    required this.regions,
+    this.regions,
     this.families,
   });
+
+  static const List<BirdList> predefinedLists = [
+    BirdList(
+      id: 'northeast_warblers',
+      name: 'Northeast Warblers',
+      description: 'Common warblers found in the northeastern United States',
+      birdIds: [
+        'btbwar', // Black-throated Blue Warbler
+        'btgwar', // Black-throated Green Warbler
+        'comyel', // Common Yellowthroat
+        'ovenbi1', // Ovenbird
+        'prawar', // Prairie Warbler
+        'yelwar', // Yellow Warbler
+        'nswwar', // Northern Waterthrush
+        'mowar', // Mourning Warbler
+        'amered', // American Redstart
+        'magwar', // Magnolia Warbler
+        'bawwar', // Black-and-white Warbler
+        'blpwar', // Blackpoll Warbler
+        'bnowa', // Bay-breasted Warbler
+        'cawwar', // Canada Warbler
+        'chswar', // Chestnut-sided Warbler
+        'howwar', // Hooded Warbler
+        'kewwar', // Kentucky Warbler
+        'nopwar', // Northern Parula
+        'pawwar', // Palm Warbler
+        'prowar', // Prothonotary Warbler
+        'whtwar', // Wilson's Warbler
+        'yebcha', // Yellow-breasted Chat
+        'yewwar', // Yellow-throated Warbler
+      ],
+      regions: ['US-MA', 'US-NY', 'US-VT', 'US-NH', 'US-ME'],
+      families: ['Parulidae'],
+    ),
+    BirdList(
+      id: 'spring_migrants',
+      name: 'Spring Migrants',
+      description: 'Birds that migrate through the northeast in spring',
+      birdIds: [
+        'bawwar', // Black-and-white Warbler
+        'nswwar', // Northern Waterthrush
+        'ovenbi1', // Ovenbird
+        'comyel', // Common Yellowthroat
+        'yelwar', // Yellow Warbler
+        'btgwar', // Black-throated Green Warbler
+        'btbwar', // Black-throated Blue Warbler
+        'prawar', // Prairie Warbler
+        'amered', // American Redstart
+        'magwar', // Magnolia Warbler
+      ],
+      regions: ['US-MA', 'US-NY', 'US-VT', 'US-NH', 'US-ME'],
+    ),
+    BirdList(
+      id: 'common_thrushes',
+      name: 'Common Thrushes',
+      description: 'Common thrush species found in the northeast',
+      birdIds: [
+        'amerob', // American Robin
+        'herthr', // Hermit Thrush
+        'swathr', // Swainson's Thrush
+        'woothr', // Wood Thrush
+        'veery', // Veery
+      ],
+      regions: ['US-MA', 'US-NY', 'US-VT', 'US-NH', 'US-ME'],
+      families: ['Turdidae'],
+    ),
+  ];
 
   BirdList copyWith({
     String? id,
@@ -39,50 +106,4 @@ class BirdList {
       families: families ?? this.families,
     );
   }
-
-  static final List<BirdList> predefinedLists = [
-    const BirdList(
-      id: 'northeast_warblers',
-      name: 'Northeast Warblers',
-      description: 'Common warblers found in the northeastern United States',
-      birdIds: [
-        'btbwar', // Black-throated Blue Warbler
-        'btgwar', // Black-throated Green Warbler
-        'comyel', // Common Yellowthroat
-        'nswwar', // Northern Waterthrush
-        'ovenbi1', // Ovenbird
-        'prawar', // Prairie Warbler
-        'yelwar', // Yellow Warbler
-      ],
-      regions: ['US-MA', 'US-NY', 'US-CT', 'US-RI', 'US-NH', 'US-VT', 'US-ME'],
-      families: ['Parulidae'],
-    ),
-    const BirdList(
-      id: 'spring_migrants',
-      name: 'Spring Migrants',
-      description: 'Common birds seen during spring migration in the northeast',
-      birdIds: [
-        'bawwar', // Black-and-white Warbler
-        'comyel', // Common Yellowthroat
-        'ovenbi1', // Ovenbird
-        'swathr', // Swainson's Thrush
-        'whtspa', // White-throated Sparrow
-        'yelwar', // Yellow Warbler
-      ],
-      regions: ['US-MA', 'US-NY', 'US-CT', 'US-RI', 'US-NH', 'US-VT', 'US-ME'],
-    ),
-    const BirdList(
-      id: 'common_thrushes',
-      name: 'Common Thrushes',
-      description: 'Common thrush species found in North America',
-      birdIds: [
-        'amerob', // American Robin
-        'herthr', // Hermit Thrush
-        'swathr', // Swainson's Thrush
-        'woothr', // Wood Thrush
-      ],
-      regions: ['US-MA', 'US-NY', 'US-CT', 'US-RI', 'US-NH', 'US-VT', 'US-ME'],
-      families: ['Turdidae'],
-    ),
-  ];
 }

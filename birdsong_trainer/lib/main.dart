@@ -6,10 +6,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/home_screen.dart';
 import 'screens/bird_list_selection_screen.dart';
 import 'screens/settings_screen.dart';
-import 'screens/training_setup_route.dart';
+import 'screens/training_setup_screen.dart';
 import 'screens/training_screen.dart';
+import 'screens/bird_list_edit_screen.dart';
 import 'providers/settings_provider.dart';
 import 'providers/bird_list_provider.dart';
+import 'models/bird_list.dart';
 
 void main() async {
   try {
@@ -86,9 +88,17 @@ class BirdsongTrainerApp extends ConsumerWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const HomeScreen(),
-        '/bird-lists': (context) => const BirdListSelectionScreen(),
+        '/lists': (context) => const BirdListSelectionScreen(),
         '/settings': (context) => const SettingsScreen(),
-        '/training': (context) => const TrainingSetupRoute(),
+        '/training-setup': (context) {
+          final list = ModalRoute.of(context)!.settings.arguments as BirdList;
+          return TrainingSetupScreen(birdList: list);
+        },
+        '/training': (context) => const TrainingScreen(),
+        '/edit-list': (context) {
+          final list = ModalRoute.of(context)!.settings.arguments as BirdList;
+          return BirdListEditScreen(list: list);
+        },
       },
     );
   }
