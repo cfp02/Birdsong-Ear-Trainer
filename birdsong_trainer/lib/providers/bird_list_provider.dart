@@ -6,14 +6,14 @@ import '../services/ebird_service.dart';
 import '../services/bird_mapping_service.dart';
 
 class BirdListsNotifier extends StateNotifier<List<BirdList>> {
-  BirdListsNotifier() : super(BirdList.predefinedLists);
+  BirdListsNotifier() : super([]);
 
   void addCustomList(BirdList list) {
     state = [...state, list];
   }
 
-  void removeCustomList(BirdList list) {
-    state = state.where((l) => l.id != list.id).toList();
+  void removeCustomList(String id) {
+    state = state.where((list) => list.id != id).toList();
   }
 
   void updateCustomList(BirdList updatedList) {
@@ -34,48 +34,35 @@ final birdsInSelectedListProvider = FutureProvider<List<Bird>>((ref) async {
   final selectedList = ref.watch(selectedBirdListProvider);
   if (selectedList == null) return [];
 
-  // Special handling for Northeast Warblers list
-  if (selectedList.name == 'Northeast Warblers') {
-    final ebirdService = ref.watch(ebirdServiceProvider);
+  final ebirdService = ref.watch(ebirdServiceProvider);
+  final birds = <Bird>[];
+
+  print('Fetching birds for list: ${selectedList.name}');
+  print('Bird IDs to fetch: ${selectedList.birdIds}');
+
+  for (final birdId in selectedList.birdIds) {
     try {
-      // Fetch all birds from MA region
-      final regionBirds =
-          await ebirdService.getBirdsByRegion(regionCode: 'US-MA');
-
-      // Filter for warblers
-      final warblers = regionBirds
-          .where((bird) {
-            final commonName = bird['comName'] as String? ?? '';
-            final scientificName = bird['sciName'] as String? ?? '';
-            final family = bird['familyComName'] as String? ?? '';
-
-            return commonName.toLowerCase().contains('warbler') ||
-                scientificName.toLowerCase().contains('setophaga') ||
-                scientificName.toLowerCase().contains('geothlypis') ||
-                scientificName.toLowerCase().contains('parkesia') ||
-                family.toLowerCase().contains('parulidae');
-          })
-          .map((birdData) => Bird(
-                speciesCode: birdData['speciesCode'] as String,
-                commonName: birdData['comName'] as String,
-                scientificName: birdData['sciName'] as String,
-                family: birdData['familyComName'] as String?,
-                region: 'US-MA',
-              ))
-          .toList();
-
-      print('Found ${warblers.length} warblers in MA region');
-      return warblers;
+      final birdData = await ebirdService.getBirdData(birdId);
+      if (birdData != null) {
+        print('Successfully fetched data for $birdId: ${birdData['comName']}');
+        birds.add(Bird(
+          speciesCode: birdData['speciesCode'] as String,
+          commonName: birdData['comName'] as String,
+          scientificName: birdData['sciName'] as String,
+          family: birdData['familyComName'] as String?,
+          region: selectedList.regions?.first,
+          difficulty: 1, // Default difficulty
+        ));
+      } else {
+        print('No data found for bird ID: $birdId');
+      }
     } catch (e) {
-      print('Error fetching warblers: $e');
-      return [];
+      print('Error fetching bird data for $birdId: $e');
     }
   }
 
-  // For other lists, use the existing mapping service
-  final mappingService = ref.watch(birdMappingServiceProvider);
-  final birds =
-      await mappingService.getBirdsFromSpeciesCodes(selectedList.birdIds);
-  print('Found ${birds.length} birds in list ${selectedList.name}');
+  print(
+      'Loaded ${birds.length} birds from region ${selectedList.regions?.first}');
+  print('Selected bird IDs: ${selectedList.birdIds}');
   return birds;
 });

@@ -114,11 +114,23 @@ class EBirdService {
 
   Future<Map<String, dynamic>?> getBirdData(String speciesCode) async {
     try {
-      final birds =
-          await getBirdsByRegion(regionCode: 'US', speciesCode: speciesCode);
+      // Use getBirdsByRegion instead of the taxonomy endpoint
+      final birds = await getBirdsByRegion(
+        regionCode: 'US', // Default to US region
+        speciesCode: speciesCode,
+      );
+
       if (birds.isNotEmpty) {
-        return birds.first;
+        final birdData = birds.first;
+        print('Fetched bird data for $speciesCode: $birdData');
+        return {
+          'speciesCode': birdData['speciesCode'] as String,
+          'comName': birdData['comName'] as String,
+          'sciName': birdData['sciName'] as String,
+          'familyComName': birdData['familyComName'] as String?,
+        };
       }
+      print('No data found for species code: $speciesCode');
       return null;
     } catch (e) {
       print('Error fetching bird data for $speciesCode: $e');

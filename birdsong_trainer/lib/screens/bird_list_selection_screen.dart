@@ -108,7 +108,6 @@ class BirdListSelectionScreen extends ConsumerWidget {
                         name: nameController.text,
                         description: descriptionController.text,
                         birdIds: [],
-                        isCustom: true,
                       ),
                     );
                 Navigator.pop(context);
@@ -138,7 +137,7 @@ class BirdListSelectionScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              ref.read(birdListsProvider.notifier).removeCustomList(list);
+              ref.read(birdListsProvider.notifier).removeCustomList(list.id);
               Navigator.pop(context);
             },
             child: const Text('Delete'),
