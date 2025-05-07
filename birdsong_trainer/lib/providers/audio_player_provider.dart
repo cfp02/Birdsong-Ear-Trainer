@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
-import '../services/xeno_canto_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../services/xeno_canto_service.dart';
 
 final xenoCantoServiceProvider = Provider<XenoCantoService>((ref) {
   final apiKey = dotenv.env['XENO_CANTO_API_KEY'] ?? '';
@@ -15,34 +15,61 @@ final audioPlayerProvider =
 
 class AudioPlayerNotifier extends StateNotifier<AsyncValue<AudioPlayer>> {
   final XenoCantoService _xenoCantoService;
-  final AudioPlayer _player = AudioPlayer();
+  AudioPlayer? _player;
 
   AudioPlayerNotifier(this._xenoCantoService)
       : super(const AsyncValue.loading()) {
-    state = AsyncValue.data(_player);
+    _initPlayer();
   }
 
-  Future<void> playBirdAudio(String speciesCode) async {
+  Future<void> _initPlayer() async {
     try {
-      final audioUrl = await _xenoCantoService.getBirdAudioUrl(speciesCode);
-      if (audioUrl != null) {
-        await _player.setUrl(audioUrl);
-        await _player.play();
-      } else {
-        print('No audio URL found for species code: $speciesCode');
+      _player = AudioPlayer();
+      state = AsyncValue.data(_player!);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  Future<void> playBirdAudio(String speciesCode, {int sampleCount = 1}) async {
+    try {
+      final player = _player;
+      if (player == null) {
+        throw Exception('Audio player not initialized');
       }
-    } catch (e) {
-      print('Error playing bird audio: $e');
+
+      // Stop any currently playing audio
+      await player.stop();
+
+      // Get recordings for the species
+      final recordings = await _xenoCantoService
+          .getRecordingsForSpecies(speciesCode, limit: sampleCount);
+      if (recordings.isEmpty) {
+        throw Exception('No recordings found for species: $speciesCode');
+      }
+
+      // Play each recording in sequence
+      for (final recording in recordings) {
+        await player.setUrl(recording['file'] as String);
+        await player.play();
+        await player.seek(Duration.zero);
+      }
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
     }
   }
 
   Future<void> stop() async {
-    await _player.stop();
+    try {
+      await _player?.stop();
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   @override
   void dispose() {
-    _player.dispose();
+    _player?.dispose();
     super.dispose();
   }
 }
