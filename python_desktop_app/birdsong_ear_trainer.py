@@ -47,9 +47,13 @@ class BirdsongTrainerApp:
         self.sound_listbox = tk.Listbox(sound_frame, width=50)
         self.sound_listbox.pack(fill='both', expand=True)
         self.sound_listbox.bind('<<ListboxSelect>>', self._on_sound_select)
-        # Play button
-        self.play_button = ttk.Button(sound_frame, text='Play', command=self._play_selected)
-        self.play_button.pack(pady=10)
+        # Play and Delete buttons
+        button_frame = ttk.Frame(sound_frame)
+        button_frame.pack(pady=10)
+        self.play_button = ttk.Button(button_frame, text='Play', command=self._play_selected)
+        self.play_button.pack(side='left', padx=5)
+        self.delete_button = ttk.Button(button_frame, text='Delete', command=self._delete_selected)
+        self.delete_button.pack(side='left', padx=5)
 
     def _populate_sound_types(self):
         # Only show umbrella categories
@@ -111,7 +115,26 @@ class BirdsongTrainerApp:
             pygame.mixer.music.load(file_path)
             pygame.mixer.music.play()
         except Exception as e:
-            messagebox.showerror('Error', f'Could not play file: {e}')
+            resp = messagebox.askyesno('Error', f'Could not play file: {e}\n\nWould you like to delete this file?')
+            if resp:
+                self._delete_selected()
+
+    def _delete_selected(self):
+        if not self.selected_bird or not self.selected_file:
+            messagebox.showinfo('Info', 'Please select a bird and a sound file to delete.')
+            return
+        file_path = os.path.join(BIRDSONG_BASE_DIR, self.selected_bird, self.selected_file)
+        if not os.path.exists(file_path):
+            messagebox.showerror('Error', f'File not found: {file_path}')
+            return
+        resp = messagebox.askyesno('Delete File', f'Are you sure you want to delete this file?\n{self.selected_file}')
+        if resp:
+            try:
+                os.remove(file_path)
+                messagebox.showinfo('Deleted', f'File deleted: {self.selected_file}')
+                self._populate_sound_list(self.selected_bird)
+            except Exception as e:
+                messagebox.showerror('Error', f'Could not delete file: {e}')
 
 if __name__ == '__main__':
     root = tk.Tk()
