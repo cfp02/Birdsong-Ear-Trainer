@@ -87,5 +87,5 @@ def create_birdsong_excel():
     print(f"Excel database created at {EXCEL_PATH}")
 
 if __name__ == '__main__':
-    # sync_birdsong()  # Uncomment to re-download all mp3s
+    # sync_birdsong()  # re-download all mp3s
     create_birdsong_excel()

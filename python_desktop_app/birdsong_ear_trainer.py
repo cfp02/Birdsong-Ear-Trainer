@@ -92,7 +92,7 @@ class BirdsongTrainerApp:
         elif selected_type.lower() in ['song', 'calls', 'tink calls', 'flight calls', 'chip calls']:
             keyword = selected_type.lower().replace(' ', '')[:-1] if selected_type.lower().endswith('s') else selected_type.lower().replace(' ', '')
             # Match any sound_type containing the umbrella keyword (case-insensitive, ignore spaces and plural)
-            self.filtered_df = self.df[self.df['sound_type'].str.lower().str.replace(' ', '').str.contains(keyword)]
+            self.filtered_df = self.df[self.df['sound_type'].str.lower().str.replace(' ', '').str.contains(keyword, na=False)]
         else:
             self.filtered_df = self.df[self.df['sound_type'] == selected_type]
         self._populate_bird_list()
@@ -228,9 +228,8 @@ class QuizMode:
         self.df = df.copy()
         self.window = tk.Toplevel(parent)
         self.window.title('Quiz Mode')
-        self.window.geometry('400x300')
-        self.score = 0
-        self.total = 0
+        self.window.geometry('400x320')
+        self.auto_advance = tk.BooleanVar(value=True)
         self._build_ui()
         self._next_question()
         self.window.protocol('WM_DELETE_WINDOW', self._on_close)
@@ -246,10 +245,13 @@ class QuizMode:
         self.feedback.pack(pady=5)
         self.next_btn = ttk.Button(self.window, text='Next', command=self._next_question, state='disabled')
         self.next_btn.pack(pady=5)
-        self.score_label = ttk.Label(self.window, text='Score: 0/0')
-        self.score_label.pack(pady=5)
+        auto_frame = ttk.Frame(self.window)
+        auto_frame.pack(pady=2)
+        auto_cb = ttk.Checkbutton(auto_frame, text='Auto-advance on correct', variable=self.auto_advance)
+        auto_cb.pack()
 
     def _next_question(self):
+        pygame.mixer.music.stop()
         self.feedback.config(text='')
         self.next_btn.config(state='disabled')
         self.options = []
@@ -268,10 +270,13 @@ class QuizMode:
             btn.pack(fill='x', pady=2)
         self.options = options
         self.sound_played = False
+        # Auto-play sound for each question
+        self._play_sound()
 
     def _play_sound(self):
         file_path = os.path.join(BIRDSONG_BASE_DIR, self.current['species'], self.current['file_name'])
         try:
+            pygame.mixer.music.stop()
             pygame.mixer.music.load(file_path)
             pygame.mixer.music.play()
             self.sound_played = True
@@ -285,12 +290,12 @@ class QuizMode:
         correct = selected == self.current['species']
         if correct:
             self.feedback.config(text='Correct!', foreground='green')
-            self.score += 1
+            self.next_btn.config(state='normal')
+            if self.auto_advance.get():
+                self.window.after(1000, self._next_question)
         else:
             self.feedback.config(text=f'Incorrect! It was {self.current["species"]}.', foreground='red')
-        self.total += 1
-        self.score_label.config(text=f'Score: {self.score}/{self.total}')
-        self.next_btn.config(state='normal')
+            self.next_btn.config(state='normal')
 
     def _on_close(self):
         pygame.mixer.music.stop()
@@ -327,6 +332,7 @@ class ListeningMode:
         self.name_label.config(text='')
 
     def _play_next(self):
+        pygame.mixer.music.stop()
         if self.idx >= len(self.playlist):
             self.name_label.config(text='Done!')
             return
@@ -343,10 +349,10 @@ class ListeningMode:
 
     def _play_audio(self, file_path, after_name=None):
         try:
+            pygame.mixer.music.stop()
             pygame.mixer.music.load(file_path)
             pygame.mixer.music.play()
             if after_name:
-                # Show name after playback (extensible for TTS)
                 self.window.after(1500, lambda: self.name_label.config(text=after_name))
         except Exception as e:
             messagebox.showerror('Error', f'Could not play file: {e}')
