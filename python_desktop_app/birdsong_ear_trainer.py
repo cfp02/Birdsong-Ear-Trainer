@@ -38,6 +38,19 @@ class BirdsongTrainerApp:
         # Game mode button
         game_btn = ttk.Button(filter_frame, text='Game Mode', command=self._open_game_mode)
         game_btn.pack(side='right', padx=5)
+        # Pause/Stop buttons
+        self.is_paused = False
+        pause_btn = ttk.Button(filter_frame, text='Pause', command=self._toggle_pause)
+        pause_btn.pack(side='right', padx=5)
+        stop_btn = ttk.Button(filter_frame, text='Stop', command=self._stop_playback)
+        stop_btn.pack(side='right', padx=5)
+        self.pause_btn = pause_btn
+        # Excel sync button (initially disabled)
+        self.sync_needed = False
+        self.sync_btn = ttk.Button(filter_frame, text='⟳', width=2, command=self._update_excel, state='disabled')
+        self.sync_btn.pack(side='right', padx=5)
+        self.sync_btn_tip = ttk.Label(filter_frame, text='', foreground='red')
+        self.sync_btn_tip.pack(side='right', padx=2)
         # Bird list
         bird_frame = ttk.Frame(self.root)
         bird_frame.pack(side='left', fill='y', padx=10, pady=5)
@@ -129,10 +142,52 @@ class BirdsongTrainerApp:
         if resp:
             try:
                 os.remove(file_path)
-                messagebox.showinfo('Deleted', f'File deleted: {file}')
                 self._populate_sound_list(bird)
+                self._mark_excel_sync_needed()
             except Exception as e:
                 messagebox.showerror('Error', f'Could not delete file: {e}')
+
+    def _mark_excel_sync_needed(self):
+        self.sync_needed = True
+        self.sync_btn.config(state='normal')
+        self.sync_btn_tip.config(text='Update Excel')
+
+    def _update_excel(self):
+        # Rebuild the Excel file from the current filesystem
+        import pandas as pd
+        from scientific_names import SCIENTIFIC_NAMES
+        rows = []
+        warbler_list_path = os.path.join(SCRIPT_DIR, 'warbler_list.txt')
+        if os.path.exists(warbler_list_path):
+            with open(warbler_list_path) as f:
+                birds = [line.strip() for line in f if line.strip()]
+        else:
+            birds = [d for d in os.listdir(BIRDSONG_BASE_DIR) if os.path.isdir(os.path.join(BIRDSONG_BASE_DIR, d))]
+        for bird in birds:
+            folder = os.path.join(BIRDSONG_BASE_DIR, bird)
+            if not os.path.isdir(folder):
+                continue
+            for file in os.listdir(folder):
+                if file.endswith('.mp3'):
+                    scientific = SCIENTIFIC_NAMES.get(bird, '')
+                    sound_type = ''
+                    match = self.df[(self.df['species'] == bird) & (self.df['file_name'] == file)]
+                    if not match.empty:
+                        sound_type = match.iloc[0]['sound_type']
+                    rows.append({
+                        'file_name': file,
+                        'species': bird,
+                        'scientific_name': scientific,
+                        'sound_type': sound_type,
+                    })
+        df = pd.DataFrame(rows, columns=['file_name', 'species', 'scientific_name', 'sound_type'])
+        df.to_excel(EXCEL_PATH, index=False)
+        self.df = df
+        self.filtered_df = self.df.copy()
+        self.sync_needed = False
+        self.sync_btn.config(state='disabled')
+        self.sync_btn_tip.config(text='')
+        messagebox.showinfo('Excel Updated', 'birdsong_database.xlsx has been updated to match the filesystem.')
 
     def _open_game_mode(self):
         game_win = tk.Toplevel(self.root)
@@ -149,6 +204,24 @@ class BirdsongTrainerApp:
     def _start_listening_mode(self):
         ListeningMode(self.root, self.filtered_df)
 
+    def _toggle_pause(self):
+        if not pygame.mixer.music.get_busy():
+            return
+        if self.is_paused:
+            pygame.mixer.music.unpause()
+            self.pause_btn.config(text='Pause')
+            self.is_paused = False
+        else:
+            pygame.mixer.music.pause()
+            self.pause_btn.config(text='Resume')
+            self.is_paused = True
+
+    def _stop_playback(self):
+        pygame.mixer.music.stop()
+        if hasattr(self, 'pause_btn'):
+            self.pause_btn.config(text='Pause')
+        self.is_paused = False
+
 # --- Quiz Mode ---
 class QuizMode:
     def __init__(self, parent, df):
@@ -160,6 +233,7 @@ class QuizMode:
         self.total = 0
         self._build_ui()
         self._next_question()
+        self.window.protocol('WM_DELETE_WINDOW', self._on_close)
 
     def _build_ui(self):
         self.prompt = ttk.Label(self.window, text='Listen to the sound and choose the bird:')
@@ -218,6 +292,10 @@ class QuizMode:
         self.score_label.config(text=f'Score: {self.score}/{self.total}')
         self.next_btn.config(state='normal')
 
+    def _on_close(self):
+        pygame.mixer.music.stop()
+        self.window.destroy()
+
 # --- Listening Mode ---
 class ListeningMode:
     def __init__(self, parent, df):
@@ -228,6 +306,7 @@ class ListeningMode:
         self.show_name_first = tk.BooleanVar(value=True)
         self._build_ui()
         self._reset_playlist()
+        self.window.protocol('WM_DELETE_WINDOW', self._on_close)
 
     def _build_ui(self):
         control_frame = ttk.Frame(self.window)
@@ -271,6 +350,10 @@ class ListeningMode:
                 self.window.after(1500, lambda: self.name_label.config(text=after_name))
         except Exception as e:
             messagebox.showerror('Error', f'Could not play file: {e}')
+
+    def _on_close(self):
+        pygame.mixer.music.stop()
+        self.window.destroy()
 
 if __name__ == '__main__':
     root = tk.Tk()
