@@ -1,13 +1,15 @@
 import os
 import pandas as pd
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 import pygame
 import random
+import json
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BIRDSONG_BASE_DIR = os.path.join(SCRIPT_DIR, '..', 'birdsong')
 EXCEL_PATH = os.path.join(BIRDSONG_BASE_DIR, 'birdsong_database.xlsx')
+BIRD_LISTS_PATH = os.path.join(SCRIPT_DIR, 'bird_lists.json')
 
 class BirdsongTrainerApp:
     def __init__(self, root):
@@ -21,6 +23,8 @@ class BirdsongTrainerApp:
         self._build_gui()
         self._populate_sound_types()
         self._populate_bird_list()
+        # Bird lists
+        self.bird_lists = self._load_bird_lists()
 
     def _init_audio(self):
         pygame.mixer.init(frequency=48000, size=-16, channels=2, buffer=1024)
@@ -35,6 +39,9 @@ class BirdsongTrainerApp:
         self.sound_type_combo = ttk.Combobox(filter_frame, textvariable=self.sound_type_var, state='readonly')
         self.sound_type_combo.pack(side='left', padx=5)
         self.sound_type_combo.bind('<<ComboboxSelected>>', self._on_filter_change)
+        # Manage Bird Lists button
+        manage_lists_btn = ttk.Button(filter_frame, text='Manage Bird Lists', command=self._open_bird_list_manager)
+        manage_lists_btn.pack(side='right', padx=5)
         # Game mode button
         game_btn = ttk.Button(filter_frame, text='Game Mode', command=self._open_game_mode)
         game_btn.pack(side='right', padx=5)
@@ -193,16 +200,34 @@ class BirdsongTrainerApp:
         game_win = tk.Toplevel(self.root)
         game_win.title('Game Mode')
         ttk.Label(game_win, text='Choose a game mode:').pack(pady=10)
-        quiz_btn = ttk.Button(game_win, text='Quiz', command=lambda: [game_win.destroy(), self._start_quiz_mode()])
+        # Bird list dropdown
+        list_frame = ttk.Frame(game_win)
+        list_frame.pack(pady=5)
+        ttk.Label(list_frame, text='Bird List:').pack(side='left')
+        bird_list_names = [''] + list(self.bird_lists.keys())
+        selected_list = tk.StringVar(value='')
+        list_combo = ttk.Combobox(list_frame, textvariable=selected_list, values=bird_list_names, state='readonly')
+        list_combo.pack(side='left', padx=5)
+        # Start game buttons
+        quiz_btn = ttk.Button(game_win, text='Quiz', command=lambda: [game_win.destroy(), self._start_quiz_mode(selected_list.get())])
         quiz_btn.pack(pady=5)
-        listen_btn = ttk.Button(game_win, text='Listening', command=lambda: [game_win.destroy(), self._start_listening_mode()])
+        listen_btn = ttk.Button(game_win, text='Listening', command=lambda: [game_win.destroy(), self._start_listening_mode(selected_list.get())])
         listen_btn.pack(pady=5)
 
-    def _start_quiz_mode(self):
-        QuizMode(self.root, self.filtered_df)
+    def _start_quiz_mode(self, bird_list_name=None):
+        game_df = self._get_game_df(bird_list_name)
+        QuizMode(self.root, game_df)
 
-    def _start_listening_mode(self):
-        ListeningMode(self.root, self.filtered_df)
+    def _start_listening_mode(self, bird_list_name=None):
+        game_df = self._get_game_df(bird_list_name)
+        ListeningMode(self.root, game_df)
+
+    def _get_game_df(self, bird_list_name):
+        if bird_list_name and bird_list_name in self.bird_lists:
+            birds = set(self.bird_lists[bird_list_name])
+            return self.filtered_df[self.filtered_df['species'].isin(birds)]
+        else:
+            return self.filtered_df
 
     def _toggle_pause(self):
         if not pygame.mixer.music.get_busy():
@@ -221,6 +246,20 @@ class BirdsongTrainerApp:
         if hasattr(self, 'pause_btn'):
             self.pause_btn.config(text='Pause')
         self.is_paused = False
+
+    def _load_bird_lists(self):
+        if os.path.exists(BIRD_LISTS_PATH):
+            with open(BIRD_LISTS_PATH, 'r') as f:
+                return json.load(f)
+        else:
+            return {}
+
+    def _save_bird_lists(self):
+        with open(BIRD_LISTS_PATH, 'w') as f:
+            json.dump(self.bird_lists, f, indent=2)
+
+    def _open_bird_list_manager(self):
+        BirdListManager(self)
 
 # --- Quiz Mode ---
 class QuizMode:
@@ -360,6 +399,103 @@ class ListeningMode:
     def _on_close(self):
         pygame.mixer.music.stop()
         self.window.destroy()
+
+class BirdListManager:
+    def __init__(self, app):
+        self.app = app
+        self.df = app.df
+        self.bird_lists = app.bird_lists
+        self.window = tk.Toplevel(app.root)
+        self.window.title('Manage Bird Lists')
+        self.window.geometry('500x400')
+        self.selected_list = tk.StringVar()
+        self._build_ui()
+        self._populate_lists()
+
+    def _build_ui(self):
+        top_frame = ttk.Frame(self.window)
+        top_frame.pack(fill='x', pady=5)
+        ttk.Label(top_frame, text='Bird Lists:').pack(side='left')
+        self.list_combo = ttk.Combobox(top_frame, textvariable=self.selected_list, state='readonly')
+        self.list_combo.pack(side='left', padx=5)
+        self.list_combo.bind('<<ComboboxSelected>>', self._on_list_select)
+        add_btn = ttk.Button(top_frame, text='New List', command=self._add_list)
+        add_btn.pack(side='left', padx=5)
+        rename_btn = ttk.Button(top_frame, text='Rename', command=self._rename_list)
+        rename_btn.pack(side='left', padx=5)
+        del_btn = ttk.Button(top_frame, text='Delete', command=self._delete_list)
+        del_btn.pack(side='left', padx=5)
+        self.bird_frame = ttk.Frame(self.window)
+        self.bird_frame.pack(fill='both', expand=True, pady=10)
+        self.bird_vars = {}
+
+    def _populate_lists(self):
+        lists = list(self.bird_lists.keys())
+        self.list_combo['values'] = lists
+        if lists:
+            self.selected_list.set(lists[0])
+            self._populate_bird_checkboxes(lists[0])
+        else:
+            self.selected_list.set('')
+            self._populate_bird_checkboxes(None)
+
+    def _on_list_select(self, event=None):
+        list_name = self.selected_list.get()
+        self._populate_bird_checkboxes(list_name)
+
+    def _populate_bird_checkboxes(self, list_name):
+        for widget in self.bird_frame.winfo_children():
+            widget.destroy()
+        self.bird_vars = {}
+        birds = sorted(self.df['species'].unique())
+        selected = set(self.bird_lists.get(list_name, [])) if list_name else set()
+        for bird in birds:
+            var = tk.BooleanVar(value=bird in selected)
+            cb = ttk.Checkbutton(self.bird_frame, text=bird, variable=var, command=lambda b=bird, v=var: self._toggle_bird(b, v))
+            cb.pack(anchor='w')
+            self.bird_vars[bird] = var
+
+    def _toggle_bird(self, bird, var):
+        list_name = self.selected_list.get()
+        if not list_name:
+            return
+        if var.get():
+            if bird not in self.bird_lists[list_name]:
+                self.bird_lists[list_name].append(bird)
+        else:
+            if bird in self.bird_lists[list_name]:
+                self.bird_lists[list_name].remove(bird)
+        self.app._save_bird_lists()
+
+    def _add_list(self):
+        name = simpledialog.askstring('New List', 'Enter a name for the new bird list:', parent=self.window)
+        if name and name not in self.bird_lists:
+            self.bird_lists[name] = []
+            self.app._save_bird_lists()
+            self._populate_lists()
+            self.selected_list.set(name)
+            self._populate_bird_checkboxes(name)
+
+    def _rename_list(self):
+        old = self.selected_list.get()
+        if not old:
+            return
+        name = simpledialog.askstring('Rename List', 'Enter a new name:', initialvalue=old, parent=self.window)
+        if name and name != old and name not in self.bird_lists:
+            self.bird_lists[name] = self.bird_lists.pop(old)
+            self.app._save_bird_lists()
+            self._populate_lists()
+            self.selected_list.set(name)
+            self._populate_bird_checkboxes(name)
+
+    def _delete_list(self):
+        name = self.selected_list.get()
+        if not name:
+            return
+        if messagebox.askyesno('Delete List', f'Delete bird list "{name}"?'):
+            del self.bird_lists[name]
+            self.app._save_bird_lists()
+            self._populate_lists()
 
 if __name__ == '__main__':
     root = tk.Tk()
