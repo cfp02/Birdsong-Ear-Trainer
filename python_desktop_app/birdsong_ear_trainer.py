@@ -39,11 +39,11 @@ class BirdsongTrainerApp:
         self.sound_type_combo = ttk.Combobox(filter_frame, textvariable=self.sound_type_var, state='readonly')
         self.sound_type_combo.pack(side='left', padx=5)
         self.sound_type_combo.bind('<<ComboboxSelected>>', self._on_filter_change)
-        # Manage Bird Lists button
-        manage_lists_btn = ttk.Button(filter_frame, text='Manage Bird Lists', command=self._open_bird_list_manager)
+        # Lists button
+        manage_lists_btn = ttk.Button(filter_frame, text='Lists', command=self._open_bird_list_manager)
         manage_lists_btn.pack(side='right', padx=5)
-        # Game mode button
-        game_btn = ttk.Button(filter_frame, text='Game Mode', command=self._open_game_mode)
+        # Game button
+        game_btn = ttk.Button(filter_frame, text='Game', command=self._open_game_mode)
         game_btn.pack(side='right', padx=5)
         # Pause/Stop buttons
         self.is_paused = False
@@ -52,11 +52,11 @@ class BirdsongTrainerApp:
         stop_btn = ttk.Button(filter_frame, text='Stop', command=self._stop_playback)
         stop_btn.pack(side='right', padx=5)
         self.pause_btn = pause_btn
-        # Excel sync button (initially disabled)
-        self.sync_needed = False
-        self.sync_btn = ttk.Button(filter_frame, text='⟳', width=2, command=self._update_excel, state='disabled')
+        # Excel sync button (initially enabled)
+        self.sync_needed = True
+        self.sync_btn = ttk.Button(filter_frame, text='⟳', width=2, command=self._update_excel, state='normal')
         self.sync_btn.pack(side='right', padx=5)
-        self.sync_btn_tip = ttk.Label(filter_frame, text='', foreground='red')
+        self.sync_btn_tip = ttk.Label(filter_frame, text='Update Excel', foreground='red')
         self.sync_btn_tip.pack(side='right', padx=2)
         # Bird list
         bird_frame = ttk.Frame(self.root)
